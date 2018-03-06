@@ -49,6 +49,7 @@ public:
         : m_iRCnt(1)
         , m_eVerbosity(IJournal::eLEVEL_WARNING)
         , m_pLength(8192)
+        , m_pBuffer(NULL)
     {
         LOCK_CREATE(m_hCS);
         
