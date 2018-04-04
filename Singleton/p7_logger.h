@@ -7,7 +7,7 @@
 #include <vector>
 #include <P7_Trace.h>
 #include <P7_Telemetry.h>
-#include <util/misc.h>
+#include <misc.h>
 
 class p7_error : public std::exception{};
 

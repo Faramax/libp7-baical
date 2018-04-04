@@ -194,6 +194,11 @@ if(BUILD_EXAMPLES)
 endif(BUILD_EXAMPLES)
 
 ##########################
+#         Addons         #
+##########################
+add_subdirectory(Singleton)
+
+##########################
 #      Installation      #
 ##########################
 
