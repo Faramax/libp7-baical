@@ -76,9 +76,9 @@ private:
 
 #ifdef USE_P7_LOG
 #define P7_LOG(log_level, module_enum, format, ...)\
-   p7_logger::instance().trace().P7_DELIVER(0,\
+   p7_logger_raii::instance().trace().P7_DELIVER(0,\
                                             log_level,\
-                                            p7_logger::instance().module(module_enum),\
+                                            p7_logger_raii::instance().module(module_enum),\
                                             format,\
                                             ##__VA_ARGS__)
 #else // USE_P7_LOG
