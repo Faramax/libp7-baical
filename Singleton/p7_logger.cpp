@@ -109,7 +109,7 @@ p7_logger& p7_logger_raii::instance()
 
 void p7_logger_raii::deinit()
 {
-   if(m_instance);
+   if(m_instance)
       delete m_instance;
    m_instance = nullptr;
 }
