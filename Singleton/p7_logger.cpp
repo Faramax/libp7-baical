@@ -1,10 +1,7 @@
 #include "p7_logger.h"
 
-p7_logger::p7_logger(char const* opts, size_t max_module_index)
-   : m_modules(max_module_index + 1)
+p7_logger::p7_logger(char const* opts)
 {
-   P7_Set_Crash_Handler();
-
    m_client = P7_Create_Client(opts);
    if(m_client == nullptr)
       throw p7_error{};
@@ -16,9 +13,17 @@ p7_logger::p7_logger(char const* opts, size_t max_module_index)
       throw p7_error{};
 }
 
-void p7_logger::register_module(const char *name, size_t module_index)
+void p7_logger::register_module(std::vector<const char*> const& module_names)
 {
-   m_trace->Register_Module(name, &module(module_index));
+   const size_t last_size = m_modules.size();
+   const size_t new_size = last_size + module_names.size();
+   m_modules.resize(new_size);
+   for(size_t i = last_size, j = 0; i < new_size; ++i, ++j)
+   {
+      assert(j < module_names.size());
+      char const* name = module_names[j];
+      m_trace->Register_Module(name, &module(i));
+   }
 }
 
 p7_logger::~p7_logger()
@@ -34,46 +39,9 @@ p7_logger::~p7_logger()
    m_client = nullptr;
 }
 
-void p7_logger::init(char const* opts, size_t max_module_index)
-{
-   if(m_instance)
-      p7_logger::deinit();
-   try{
-      m_instance = new p7_logger(opts, max_module_index);
-   }
-   catch(...)
-   {
-      p7_logger::deinit();
-      throw;
-   }
-}
-
-void p7_logger::deinit()
-{
-   if(m_instance);
-      delete m_instance;
-   m_instance = nullptr;
-   P7_Clr_Crash_Handler();
-}
-
-p7_logger& p7_logger::instance()
-{
-   assert(m_instance);
-   return *m_instance;
-}
-
 void p7_logger::register_thread(char const* name)
 {
    m_trace->Register_Thread(name, 0);
-}
-
-p7_beam p7_logger::create_beam(const tXCHAR  *i_pName,  tINT64    i_llMin,
-                            tINT64         i_llMax,  tINT64    i_llAlarm)
-{
-   tUINT8 tid;
-   if(FALSE == telemetry().Create(i_pName, i_llMin, i_llMax, i_llAlarm, true, &tid))
-      throw p7_error{};
-   return {tid};
 }
 
 IP7_Trace::hModule &p7_logger::module(size_t u)
@@ -92,13 +60,67 @@ IP7_Telemetry &p7_logger::telemetry()
    return *m_telemetry;
 }
 
+p7_beam p7_logger::create_beam(const tXCHAR  *i_pName,  tINT64    i_llMin,
+                            tINT64         i_llMax,  tINT64    i_llAlarm)
+{
+   tUINT8 tid;
+   if(FALSE == telemetry().Create(i_pName, i_llMin, i_llMax, i_llAlarm, true, &tid))
+      throw p7_error{};
+   return {tid};
+}
+
+void p7_logger::set_verbosity(size_t module_idx, eP7Trace_Level const& level)
+{
+   assert(P7_TRACE_LEVEL_TRACE == EP7TRACE_LEVEL_TRACE);
+   assert(P7_TRACE_LEVEL_CRITICAL == EP7TRACE_LEVEL_CRITICAL);
+   P7_Trace_Set_Verbosity(m_trace, module(module_idx), static_cast<tUINT32>(level));
+}
+
+void p7_logger::set_verbosity(eP7Trace_Level const& level)
+{
+   assert(P7_TRACE_LEVEL_TRACE == EP7TRACE_LEVEL_TRACE);
+   assert(P7_TRACE_LEVEL_CRITICAL == EP7TRACE_LEVEL_CRITICAL);
+   m_trace->Set_Verbosity(NULL, level);
+   for(IP7_Trace::hModule& m : m_modules)
+   {
+      if(m != IP7_Trace::hModule{})
+         m_trace->Set_Verbosity(m, level);
+   }
+}
+
+p7_logger_raii::p7_logger_raii(char const* opts)
+{
+   deinit();
+   m_instance = new p7_logger(opts);
+   P7_Set_Crash_Handler();
+}
+
+p7_logger_raii::~p7_logger_raii()
+{
+   deinit();
+   P7_Clr_Crash_Handler();
+}
+
+p7_logger& p7_logger_raii::instance()
+{
+   assert(m_instance);
+   return *m_instance;
+}
+
+void p7_logger_raii::deinit()
+{
+   if(m_instance);
+      delete m_instance;
+   m_instance = nullptr;
+}
+
 p7_beam::p7_beam(tUINT8 tid)
    : m_tid(tid)
 {}
 
 bool p7_beam::add(tINT64 i_llValue)
 {
-   return p7_logger::instance().telemetry().Add(m_tid, i_llValue);
+   return p7_logger_raii::instance().telemetry().Add(m_tid, i_llValue);
 }
 
-p7_logger* p7_logger::m_instance = nullptr;
+p7_logger* p7_logger_raii::m_instance = nullptr;

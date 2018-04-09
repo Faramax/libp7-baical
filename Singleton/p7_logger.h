@@ -1,6 +1,7 @@
 #pragma once
 
-#include <array>
+#include <vector>
+#include <utility>
 #include <cassert>
 #include <iostream>
 #include <exception>
@@ -20,53 +21,35 @@ private:
    tUINT8 m_tid;
 };
 
+/*! Обертка над библиотекой Р7. Содержит в себе один Trace для вывода сообщений
+ * и один Telemetry для ведения телеметрии. При конструировании получает опции
+ * для клиента Р7.*/
 class DLL_PUBLIC p7_logger
 {
-private:
-   p7_logger(char const* opts, size_t max_module_index);
+public:
+   p7_logger(char const* opts);
    p7_logger(p7_logger const&) = delete;
    p7_logger(p7_logger&&) = default;
    p7_logger& operator=(p7_logger const&) = delete;
    p7_logger& operator=(p7_logger&&) = default;
    ~p7_logger();
 
-public:
-   static void       init(char const* opts, size_t max_module_index);
-   static void       deinit();
-   static p7_logger& instance();
-
-private:
-   static p7_logger* m_instance;
-
-public:
-//! Эта функция должна быть вызвана для всех модулей, которые будут использованы в дальнейшем.
-   void                 register_module(const char *name, size_t module_index);
+/*! В эту функцию должны быть имена всех модулей, которые будут использованы
+ * в дальнейшем. Адресация модулей при использовании класса p7_logger будет совпадать
+ * с позицией модулей в этом векторе. Если функция будет вызываться несколько раз,
+ * нумерация будет продолжена.*/
+   void                 register_module(const std::vector<const char*>& module_names);
    void                 register_thread(char const* name);
-//! Будьте внимательны, module_index не должен превышать max_module_index, переданный при инициализации класса.
+
+/*! Будьте внимательны, module_index не должен превышать размер вектора,
+ * переданный при инициализации модулей. */
    IP7_Trace::hModule&  module(size_t module_index);
    IP7_Trace&           trace();
    IP7_Telemetry&       telemetry();
-   p7_beam create_beam(const tXCHAR  *i_pName,  tINT64    i_llMin,
-                       tINT64         i_llMax,  tINT64    i_llAlarm);
-
-   void set_verbosity(size_t module_idx, eP7Trace_Level const& level)
-   {
-      assert(P7_TRACE_LEVEL_TRACE == EP7TRACE_LEVEL_TRACE);
-      assert(P7_TRACE_LEVEL_CRITICAL == EP7TRACE_LEVEL_CRITICAL);
-      P7_Trace_Set_Verbosity(m_trace, module(module_idx), static_cast<tUINT32>(level));
-   }
-
-   void set_verbosity(eP7Trace_Level const& level)
-   {
-      assert(P7_TRACE_LEVEL_TRACE == EP7TRACE_LEVEL_TRACE);
-      assert(P7_TRACE_LEVEL_CRITICAL == EP7TRACE_LEVEL_CRITICAL);
-      m_trace->Set_Verbosity(NULL, level);
-      for(IP7_Trace::hModule& m : m_modules)
-      {
-         if(m != IP7_Trace::hModule{})
-            m_trace->Set_Verbosity(m, level);
-      }
-   }
+   p7_beam              create_beam(const tXCHAR  *i_pName,  tINT64    i_llMin,
+                                    tINT64         i_llMax,  tINT64    i_llAlarm);
+   void                 set_verbosity(size_t module_idx, eP7Trace_Level const& level);
+   void                 set_verbosity(eP7Trace_Level const& level);
 
 private:
    IP7_Client*       m_client = nullptr;
@@ -76,17 +59,19 @@ private:
    stTelemetry_Conf  m_telemetry_conf     = {};
 };
 
-struct p7_logger_raii
+/*! Класс инициализирует синглетон логгера p7_logger при создании и деинициализирует при удалении. */
+struct DLL_PUBLIC p7_logger_raii
 {
-   p7_logger_raii(char const* opts, size_t max_module_index)
-   {
-      p7_logger::init(opts, max_module_index);
-   }
+   p7_logger_raii(char const* opts);
+   ~p7_logger_raii();
 
-   ~p7_logger_raii()
-   {
-      p7_logger::deinit();
-   }
+   static p7_logger& instance();
+
+private:
+   void deinit();
+
+private:
+   static p7_logger* m_instance;
 };
 
 #ifdef USE_P7_LOG
