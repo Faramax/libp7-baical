@@ -43,7 +43,7 @@ public:
 
 /*! Будьте внимательны, module_index не должен превышать размер вектора,
  * переданный при инициализации модулей. */
-   IP7_Trace::hModule&  module(size_t module_index);
+   IP7_Trace::hModule  module(size_t module_index);
    IP7_Trace&           trace();
    IP7_Telemetry&       telemetry();
    p7_beam              create_beam(const tXCHAR  *i_pName,  tINT64    i_llMin,

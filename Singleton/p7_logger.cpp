@@ -22,7 +22,7 @@ void p7_logger::register_module(std::vector<const char*> const& module_names)
    {
       assert(j < module_names.size());
       char const* name = module_names[j];
-      m_trace->Register_Module(name, &module(i));
+      m_trace->Register_Module(name, &m_modules[i]);
    }
 }
 
@@ -44,10 +44,9 @@ void p7_logger::register_thread(char const* name)
    m_trace->Register_Thread(name, 0);
 }
 
-IP7_Trace::hModule &p7_logger::module(size_t u)
+IP7_Trace::hModule p7_logger::module(size_t u)
 {
-   assert(u < m_modules.size());
-   return m_modules[static_cast<size_t>(u)];
+   return u < m_modules.size() ? m_modules[u] : NULL;
 }
 
 IP7_Trace &p7_logger::trace()
@@ -103,7 +102,11 @@ p7_logger_raii::~p7_logger_raii()
 
 p7_logger& p7_logger_raii::instance()
 {
-   assert(m_instance);
+   //assert(m_instance);
+   if (m_instance == nullptr) {
+      m_instance = new p7_logger("/P7.Sink=Null");
+      P7_Set_Crash_Handler();
+   }
    return *m_instance;
 }
 
