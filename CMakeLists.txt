@@ -110,6 +110,7 @@ target_include_directories(P7 PRIVATE
 )
 
 #Build configuration
+target_link_libraries(P7 PUBLIC stdc++)
 target_include_directories(P7 PRIVATE ${PLATFORM_DIR})
 if(BUILD_SHARED_LIBS)
   target_link_libraries(P7 PRIVATE ${PLATFORM_LIBS})
