@@ -10,7 +10,19 @@
 #include <P7_Telemetry.h>
 #include <misc.h>
 
-class p7_error : public std::exception{};
+class p7_error : public std::exception
+{
+   public:
+      explicit p7_error(std::string msg)
+         :msg_(std::move(msg))
+      {}
+
+   const char * what () const noexcept override{
+      return msg_.c_str();
+   }
+private:
+   std::string msg_;
+};
 
 class DLL_PUBLIC p7_beam
 {

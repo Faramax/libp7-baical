@@ -4,13 +4,19 @@ p7_logger::p7_logger(char const* opts)
 {
    m_client = P7_Create_Client(opts);
    if(m_client == nullptr)
-      throw p7_error{};
+      throw p7_error("failed to create P7 client");
+
    m_trace = P7_Create_Trace(m_client, "MainLog");
    if (m_trace == nullptr)
-      throw p7_error{};
-   m_telemetry = P7_Create_Telemetry(m_client, "MainTelemetry", &m_telemetry_conf);
-   if (m_telemetry == nullptr)
-      throw p7_error{};
+      throw p7_error("failed to create P7 trace");
+
+   /// Telemetry available for binary sinks only!
+   if (m_client->Get_Type() == IP7_Client::eFileBin || m_client->Get_Type() == IP7_Client::eAuto)
+   {
+      m_telemetry = P7_Create_Telemetry(m_client, "MainTelemetry", &m_telemetry_conf);
+      if (m_telemetry == nullptr)
+         throw p7_error("failed to create P7 telemetry");
+   }
 }
 
 void p7_logger::register_module(std::vector<const char*> const& module_names)
@@ -64,7 +70,7 @@ p7_beam p7_logger::create_beam(const tXCHAR  *i_pName,  tINT64    i_llMin,
 {
    tUINT8 tid;
    if(FALSE == telemetry().Create(i_pName, i_llMin, i_llMax, i_llAlarm, true, &tid))
-      throw p7_error{};
+      throw p7_error("failed to create P7 telemetry counter");
    return {tid};
 }
 
