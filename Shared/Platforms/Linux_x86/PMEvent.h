@@ -375,7 +375,7 @@ public:
         l_dwReturn = Get_Signal();
         pthread_mutex_unlock(&m_sMutex);
 #else
-        clock_gettime(CLOCK_REALTIME, &l_sTime);
+        clock_gettime(CLOCK_P7, &l_sTime);
         
         l_qwNano       += l_sTime.tv_nsec;
         l_sTime.tv_sec += static_cast<time_t>(l_qwNano/1000000000ULL);

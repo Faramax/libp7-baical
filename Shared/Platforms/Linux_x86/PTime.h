@@ -28,7 +28,7 @@
 #define TIME_MIN_100NS                                              600000000ull
 #define TIME_SEC_100NS                                               10000000ull
 #define TIME_MSC_100NS                                                  10000ull
-
+#define CLOCK_P7 CLOCK_REALTIME
 
 ////////////////////////////////////////////////////////////////////////////////
 //GetTickCount
@@ -39,7 +39,7 @@ static __attribute__ ((unused)) tUINT32 GetTickCount()
     //gettimeofday(&l_sTime, NULL);
 
     struct timespec l_sTime = {0, 0};
-    clock_gettime(CLOCK_MONOTONIC, &l_sTime);
+    clock_gettime(CLOCK_P7, &l_sTime);
     
     l_qwReturn  = l_sTime.tv_sec;
     l_qwReturn *= 1000;
@@ -56,7 +56,7 @@ static __attribute__ ((unused)) tUINT64 GetPerformanceCounter()
     tUINT64 l_qwReturn      = 0;
     struct timespec l_sTime = {0, 0};
     
-    clock_gettime(CLOCK_MONOTONIC, &l_sTime);
+    clock_gettime(CLOCK_P7, &l_sTime);
     
     l_qwReturn  = (tUINT64)(l_sTime.tv_sec) * 10000000;
     l_qwReturn += (tUINT64)(l_sTime.tv_nsec) / 100;
@@ -104,7 +104,7 @@ static __attribute__ ((unused)) void GetLocalTime(tUINT64  i_qwTime,
     if (l_pTime)
     {
         o_rYear         = 1900 + l_pTime->tm_year;
-        o_rMonth        = l_pTime->tm_mon;
+        o_rMonth        = l_pTime->tm_mon + 1;
         o_rDay          = l_pTime->tm_mday;
         o_rHour         = l_pTime->tm_hour;
         o_rMinutes      = l_pTime->tm_min;
@@ -139,7 +139,7 @@ static __attribute__ ((unused)) void GetEpochTime(tUINT32 *o_pHi, tUINT32 *o_pLo
     gettimeofday(&l_sTime, NULL);
 
     l_qwResult  = (tUINT64)(l_sTime.tv_sec) * 10000000;
-    l_qwResult += (tUINT64)(l_sTime.tv_usec) * 100;
+    l_qwResult += (tUINT64)(l_sTime.tv_usec) * 10;
     l_qwResult += TIME_OFFSET_1601_1970;
 
     if (o_pHi)

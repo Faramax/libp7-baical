@@ -160,7 +160,7 @@ public:
             l_iOffs += l_iRes;
         }
 
-        clock_gettime(CLOCK_MONOTONIC, &l_sTime);
+        clock_gettime(CLOCK_P7, &l_sTime);
 
         l_qwMSec  = l_sTime.tv_sec;
         l_qwMSec *= 1000;
