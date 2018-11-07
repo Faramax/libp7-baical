@@ -85,6 +85,7 @@ CClFile::CClFile(tXCHAR **i_pArgs, tINT32 i_iCount)
     if (ECLIENT_STATUS_OK == m_eStatus)
     {
         m_eStatus = Init_Thread(i_pArgs, i_iCount);
+        pthread_setname_np(m_hThread, "P7");
     }
 
     //5. Initialize crash handler
