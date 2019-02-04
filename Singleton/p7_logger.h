@@ -27,10 +27,10 @@ private:
 class DLL_PUBLIC p7_beam
 {
 public:
-   p7_beam(tUINT8 tid);
+   p7_beam(tUINT16 tid);
    bool add(tINT64 i_llValue);
 private:
-   tUINT8 m_tid;
+   tUINT16 m_tid;
 };
 
 /*! Обертка над библиотекой Р7. Содержит в себе один Trace для вывода сообщений
@@ -58,8 +58,8 @@ public:
    IP7_Trace::hModule  module(size_t module_index);
    IP7_Trace&           trace();
    IP7_Telemetry&       telemetry();
-   p7_beam              create_beam(const tXCHAR  *i_pName,  tINT64    i_llMin,
-                                    tINT64         i_llMax,  tINT64    i_llAlarm);
+   p7_beam              create_beam(const tXCHAR  *i_pName,  tDOUBLE i_llMin, tDOUBLE i_dbAlarmMin,
+                                    tDOUBLE i_llMax, tDOUBLE i_dbAlarmMax);
    void                 set_verbosity(size_t module_idx, eP7Trace_Level const& level);
    void                 set_verbosity(eP7Trace_Level const& level);
 
