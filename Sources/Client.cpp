@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                             /
-// 2012-2017 (c) Baical                                                        /
+// 2012-2019 (c) Baical                                                        /
 //                                                                             /
 // This library is free software; you can redistribute it and/or               /
 // modify it under the terms of the GNU Lesser General Public                  /
@@ -227,8 +227,11 @@ P7_EXPORT IP7_Client * __cdecl P7_Get_Shared(const tXCHAR *i_pName)
 
 ////////////////////////////////////////////////////////////////////////////////
 //cbCrashHandler
-void __cdecl cbCrashHandler(int i_iType, void *i_pContext)
+void __cdecl cbCrashHandler(eCrashCode i_eCode, const void *i_pCrashContext, void *i_pUserContext)
 {
+    UNUSED_ARG(i_eCode);
+    UNUSED_ARG(i_pCrashContext);
+    UNUSED_ARG(i_pUserContext);
     P7_Exceptional_Flush();
 }//cbCrashHandler
 
@@ -237,7 +240,8 @@ void __cdecl cbCrashHandler(int i_iType, void *i_pContext)
 //P7_Set_Crash_Handler
 P7_EXPORT void __cdecl P7_Set_Crash_Handler()
 {
-    ChInstall(&cbCrashHandler);
+    ChInstall();
+    ChSetHandler(&cbCrashHandler);
 }//P7_Set_Crash_Handler
 
 
@@ -366,10 +370,29 @@ CClient::CClient(IP7_Client::eType i_eType,
     , m_bConnected(TRUE)
     , m_dwConnection_Resets(0)
     , m_eType(i_eType)
+    , m_pArgs(NULL)
+    , m_iArgsCnt(0)
+
 {
     memset(m_pChannels, 0, sizeof(IP7C_Channel*)*USER_PACKET_CHANNEL_ID_MAX_SIZE);
     memset(&m_hCS,      0, sizeof(m_hCS));
     memset(&m_hCS_Reg,  0, sizeof(m_hCS_Reg));
+
+    if (    (i_pArgs)
+         && (i_iCount)
+       )
+    {
+        m_iArgsCnt = i_iCount;
+        m_pArgs    = (tXCHAR **)malloc(sizeof(tXCHAR *) * m_iArgsCnt);
+
+        if (m_pArgs)
+        {
+            for (int l_iI = 0; l_iI < m_iArgsCnt; l_iI ++)
+            {
+                m_pArgs[l_iI] = PStrDub(i_pArgs[l_iI]);
+            }
+        }
+    }
 
     LOCK_CREATE(m_hCS_Reg);
     LOCK_CREATE(m_hCS);
@@ -387,6 +410,19 @@ CClient::~CClient()
     {
         m_pLog->Release();
         m_pLog = NULL;
+    }
+
+    if (m_pArgs)
+    {
+        for (int l_iI = 0; l_iI < m_iArgsCnt; l_iI ++)
+        {
+            PStrFreeDub(m_pArgs[l_iI]);
+            m_pArgs[l_iI] = NULL;
+        }
+
+        free(m_pArgs);
+        m_pArgs    = NULL;
+        m_iArgsCnt = 0;
     }
 
     LOCK_DESTROY(m_hCS_Reg);
@@ -548,6 +584,66 @@ tBOOL CClient::Share(const tXCHAR *i_pName)
 
 
 ////////////////////////////////////////////////////////////////////////////////
+//Get_Argument
+const tXCHAR *CClient::Get_Argument(const tXCHAR  *i_pName)
+{
+    return Get_Argument_Text_Value(m_pArgs, m_iArgsCnt, i_pName);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+//Get_Channels_Count()
+size_t CClient::Get_Channels_Count()
+{
+    size_t l_szReturn = 0;
+
+    LOCK_ENTER(m_hCS_Reg);
+
+    for (tUINT32 l_dwI = 0; l_dwI < USER_PACKET_CHANNEL_ID_MAX_SIZE; l_dwI++)
+    {
+        if (m_pChannels[l_dwI])
+        {
+            l_szReturn ++;
+        }
+    }
+    LOCK_EXIT(m_hCS_Reg);
+
+    return l_szReturn;
+}//Get_Channels_Count()
+
+
+////////////////////////////////////////////////////////////////////////////////
+//Get_Channel()
+IP7C_Channel *CClient::Get_Channel(size_t i_szIndex)
+{
+    IP7C_Channel *l_pReturn = NULL;
+    size_t        l_szCount = 0;
+
+    LOCK_ENTER(m_hCS_Reg);
+
+    for (tUINT32 l_dwI = 0; l_dwI < USER_PACKET_CHANNEL_ID_MAX_SIZE; l_dwI++)
+    {
+        if (m_pChannels[l_dwI])
+        {
+            if (l_szCount == i_szIndex)
+            {
+                l_pReturn = m_pChannels[l_dwI];
+                l_pReturn->Add_Ref();
+                break;
+            }
+            else
+            {
+                l_szCount ++;
+            }
+        }
+    }
+    LOCK_EXIT(m_hCS_Reg);
+
+    return l_pReturn;
+}//Get_Channel()
+
+
+////////////////////////////////////////////////////////////////////////////////
 //Unshare()
 tBOOL CClient::Unshare()
 {
@@ -565,9 +661,7 @@ tBOOL CClient::Unshare()
 
 ////////////////////////////////////////////////////////////////////////////////
 //Init_Log
-eClient_Status CClient::Init_Log(tXCHAR **i_pArgs,
-                                 tINT32   i_iCount
-                                )
+eClient_Status CClient::Init_Log(tXCHAR **i_pArgs, tINT32 i_iCount)
 {
     tXCHAR          *l_pArg_Value   = NULL;
     IJournal::eLevel l_eVerbosity   = IJournal::eLEVEL_CRITICAL;

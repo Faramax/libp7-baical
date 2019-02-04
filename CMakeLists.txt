@@ -9,7 +9,7 @@ include(GenerateExportHeader)
 include(CMakePackageConfigHelpers)
 
 set(P7_MAJOR_VERSION 4)
-set(P7_MINOR_VERSION 6)
+set(P7_MINOR_VERSION 7)
 set(P7_PATCH_VERSION 0)
 set(P7_VERSION ${P7_MAJOR_VERSION}.${P7_MINOR_VERSION}.${P7_PATCH_VERSION})
 
@@ -38,6 +38,25 @@ set(SOURCES "Sources/ClBaical.cpp"
             "Sources/Proxy.cpp"
             "Sources/Telemetry.cpp"
             "Sources/Trace.cpp"
+            "Sources/ClBaical.h"
+            "Sources/ClFile.h"
+            "Sources/Client.h"
+            "Sources/ClNull.h"
+            "Sources/ClText.h"
+            "Sources/Telemetry.h"
+            "Sources/Trace.h"
+            "Sources/ClTextConsole.h"
+            "Sources/ClTextFile.h"
+            "Sources/ClTextSink.h"
+            "Sources/ClTextSyslog.h"
+            "Sources/Common.h"
+            "Sources/CommonClient.h"
+            "Sources/Formatter.h"
+            "Sources/PacketsPool.h"
+            "Sources/resource.h"
+            "Sources/Socket.h"
+            "Sources/targetver.h"
+            "Sources/TPackets.h"
 )
 
 
@@ -45,7 +64,11 @@ set(SOURCES_TEST_SPEED "Tests/Speed/Speed.cpp")
 
 set(SOURCES_TEST_SPEEDPARALLEL "Tests/Speed/SpeedParallel.cpp")
 
-set(SOURCES_TEST_TRACE "Tests/Trace/Main.cpp")
+set(SOURCES_TEST_TRACE
+   "Tests/Trace/Main.cpp"
+   "Tests/Trace/stdafx.h"
+   "Tests/Trace/targetver.h"
+)
 
 if(WIN32)
   set(PLATFORM_DIR "Shared/Platforms/Windows_x86/")
@@ -74,6 +97,10 @@ set(PLATFORM_HEADERS
   ${PLATFORM_DIR}/PSystem.h
   ${PLATFORM_DIR}/PThreadShell.h
   ${PLATFORM_DIR}/PTime.h
+  ${PLATFORM_DIR}/PSharedLib.h
+  ${PLATFORM_DIR}/PPerformanceInfo.h
+  ${PLATFORM_DIR}/PProfiler.h
+  ${PLATFORM_DIR}/PCrashDump.h
   Shared/AList.h
   Shared/CRC32.h
   Shared/IFile.h
@@ -85,6 +112,14 @@ set(PLATFORM_HEADERS
   Shared/Ticks.h
   Shared/UTF.h
   Shared/WString.h
+  Shared/SharedLib.h
+  Shared/IConsole.h
+  Shared/DnsResolver.h
+  Shared/IPerformanceInfo.h
+  Shared/ISignal.h
+  Shared/Predicate.h
+  Shared/QStringHelper.h
+  Shared/UDP_NB.h
 )
 
 ##########################

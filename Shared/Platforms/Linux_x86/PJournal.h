@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                             /
-// 2012-2017 (c) Baical                                                        /
+// 2012-2019 (c) Baical                                                        /
 //                                                                             /
 // This library is free software; you can redistribute it and/or               /
 // modify it under the terms of the GNU Lesser General Public                  /
@@ -128,6 +128,8 @@ public:
               ...
              )
     {
+        UNUSED_ARG(i_hModule);
+        UNUSED_ARG(i_pFile);
         tBOOL           l_bReturn = TRUE;
         time_t          l_tNow    = time(NULL);
         struct tm      *l_pTime   = localtime(&l_tNow);
@@ -218,18 +220,22 @@ public:
     ////////////////////////////////////////////////////////////////////////////
     tBOOL Register_Thread(const tXCHAR *i_pName, tUINT32 i_dwThreadId)
     {
+        UNUSED_ARG(i_pName);
+        UNUSED_ARG(i_dwThreadId);
         return FALSE;
     }
 
     ////////////////////////////////////////////////////////////////////////////
     tBOOL Unregister_Thread(tUINT32 i_dwThreadId)
     {
+        UNUSED_ARG(i_dwThreadId);
         return FALSE;
     }
 
     ////////////////////////////////////////////////////////////////////////////
     tBOOL Register_Module(const tXCHAR *i_pName, IJournal::hModule *o_hModule)
     {
+        UNUSED_ARG(i_pName);
         if (o_hModule)
         {
             *o_hModule = NULL;
