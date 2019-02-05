@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.10)
 
 ##########################
 #  Project configuration #
@@ -8,8 +8,8 @@ project(P7)
 include(GenerateExportHeader)
 include(CMakePackageConfigHelpers)
 
-set(P7_MAJOR_VERSION 4)
-set(P7_MINOR_VERSION 7)
+set(P7_MAJOR_VERSION 5)
+set(P7_MINOR_VERSION 0)
 set(P7_PATCH_VERSION 0)
 set(P7_VERSION ${P7_MAJOR_VERSION}.${P7_MINOR_VERSION}.${P7_PATCH_VERSION})
 
@@ -89,38 +89,43 @@ set(PLATFORM_HEADERS
   ${PLATFORM_DIR}/PJournal.h
   ${PLATFORM_DIR}/PLock.h
   ${PLATFORM_DIR}/PMEvent.h
+  ${PLATFORM_DIR}/PPerformanceInfo.h
   ${PLATFORM_DIR}/PProcess.h
   ${PLATFORM_DIR}/PShared.h
+  ${PLATFORM_DIR}/PSharedLib.h
   ${PLATFORM_DIR}/PSignal.h
   ${PLATFORM_DIR}/PSocket.h
   ${PLATFORM_DIR}/PString.h
   ${PLATFORM_DIR}/PSystem.h
   ${PLATFORM_DIR}/PThreadShell.h
   ${PLATFORM_DIR}/PTime.h
-  ${PLATFORM_DIR}/PSharedLib.h
-  ${PLATFORM_DIR}/PPerformanceInfo.h
-  ${PLATFORM_DIR}/PProfiler.h
-  ${PLATFORM_DIR}/PCrashDump.h
   Shared/AList.h
   Shared/CRC32.h
+  Shared/DnsResolver.h
+  Shared/IConsole.h
   Shared/IFile.h
   Shared/IJournal.h
   Shared/IMEvent.h
-  Shared/Length.h
-  Shared/Lock.h
-  Shared/RBTree.h
-  Shared/Ticks.h
-  Shared/UTF.h
-  Shared/WString.h
-  Shared/SharedLib.h
-  Shared/IConsole.h
-  Shared/DnsResolver.h
   Shared/IPerformanceInfo.h
   Shared/ISignal.h
+  Shared/Length.h
+  Shared/Lock.h
   Shared/Predicate.h
   Shared/QStringHelper.h
+  Shared/RBTree.h
+  Shared/SharedLib.h
+  Shared/Ticks.h
   Shared/UDP_NB.h
+  Shared/UTF.h
+  Shared/WString.h
 )
+
+if(NOT WIN32)
+  list(APPEND PLATFORM_HEADERS 
+    ${PLATFORM_DIR}/PCrashDump.h
+    ${PLATFORM_DIR}/PProfiler.h
+  )
+endif()
 
 ##########################
 #    P7 configuration    #
