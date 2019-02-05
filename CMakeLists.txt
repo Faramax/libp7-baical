@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.10)
 
 ##########################
 #  Project configuration #
@@ -99,7 +99,6 @@ set(PLATFORM_HEADERS
   ${PLATFORM_DIR}/PSystem.h
   ${PLATFORM_DIR}/PThreadShell.h
   ${PLATFORM_DIR}/PTime.h
-  ${PLATFORM_DIR}/PCrashDump.h
   Shared/AList.h
   Shared/CRC32.h
   Shared/DnsResolver.h
@@ -108,21 +107,24 @@ set(PLATFORM_HEADERS
   Shared/IJournal.h
   Shared/IMEvent.h
   Shared/IPerformanceInfo.h
+  Shared/ISignal.h
   Shared/Length.h
   Shared/Lock.h
+  Shared/Predicate.h
+  Shared/QStringHelper.h
   Shared/RBTree.h
   Shared/SharedLib.h
   Shared/Ticks.h
+  Shared/UDP_NB.h
   Shared/UTF.h
   Shared/WString.h
-  Shared/ISignal.h
-  Shared/Predicate.h
-  Shared/QStringHelper.h
-  Shared/UDP_NB.h
 )
 
 if(NOT WIN32)
-  list(APPEND PLATFORM_HEADERS ${PLATFORM_DIR}/PProfiler.h)
+  list(APPEND PLATFORM_HEADERS 
+    ${PLATFORM_DIR}/PCrashDump.h
+    ${PLATFORM_DIR}/PProfiler.h
+  )
 endif()
 
 ##########################
