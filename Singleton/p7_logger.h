@@ -55,9 +55,9 @@ public:
 
 /*! Будьте внимательны, module_index не должен превышать размер вектора,
  * переданный при инициализации модулей. */
-   IP7_Trace::hModule  module(size_t module_index);
+   IP7_Trace::hModule   module(size_t module_index);
    IP7_Trace&           trace();
-   IP7_Telemetry&       telemetry();
+   IP7_Telemetry*       telemetry();
    p7_beam              create_beam(const tXCHAR  *i_pName,  tDOUBLE i_llMin, tDOUBLE i_dbAlarmMin,
                                     tDOUBLE i_llMax, tDOUBLE i_dbAlarmMax);
    void                 set_verbosity(size_t module_idx, eP7Trace_Level const& level);

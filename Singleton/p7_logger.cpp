@@ -60,17 +60,20 @@ IP7_Trace &p7_logger::trace()
    return *m_trace;
 }
 
-IP7_Telemetry &p7_logger::telemetry()
+IP7_Telemetry *p7_logger::telemetry()
 {
-   return *m_telemetry;
+   return m_telemetry;
 }
 
 p7_beam p7_logger::create_beam(const tXCHAR  *i_pName,
                                tDOUBLE i_dbMin, tDOUBLE i_dbAlarmMin,
                                tDOUBLE i_dbMax, tDOUBLE i_dbAlarmMax)
 {
+   IP7_Telemetry* telemetry = p7_logger_raii::instance().telemetry();
+   if(!telemetry)
+      return 0;
    tUINT16 tid{};
-   if(FALSE == telemetry().Create(i_pName, i_dbMin, i_dbAlarmMin, i_dbMax, i_dbAlarmMax, true, &tid))
+   if(FALSE == telemetry->Create(i_pName, i_dbMin, i_dbAlarmMin, i_dbMax, i_dbAlarmMax, true, &tid))
       throw p7_error("failed to create P7 telemetry counter");
    return {tid};
 }
@@ -130,7 +133,10 @@ p7_beam::p7_beam(tUINT16 tid)
 
 bool p7_beam::add(tINT64 i_llValue)
 {
-   return p7_logger_raii::instance().telemetry().Add(m_tid, i_llValue);
+   IP7_Telemetry* telemetry = p7_logger_raii::instance().telemetry();
+   if(!telemetry)
+      return false;
+   return telemetry->Add(m_tid, i_llValue);
 }
 
 p7_logger* p7_logger_raii::m_instance = nullptr;
