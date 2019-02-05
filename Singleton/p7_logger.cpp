@@ -131,7 +131,7 @@ p7_beam::p7_beam(tUINT16 tid)
    : m_tid(tid)
 {}
 
-bool p7_beam::add(tINT64 i_llValue)
+bool p7_beam::add(tDOUBLE i_llValue)
 {
    IP7_Telemetry* telemetry = p7_logger_raii::instance().telemetry();
    if(!telemetry)

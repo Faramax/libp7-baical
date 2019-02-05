@@ -28,7 +28,7 @@ class DLL_PUBLIC p7_beam
 {
 public:
    p7_beam(tUINT16 tid);
-   bool add(tINT64 i_llValue);
+   bool add(tDOUBLE i_llValue);
 private:
    tUINT16 m_tid;
 };
