@@ -125,14 +125,22 @@ private:
 
     static THSHELL_RET_TYPE THSHELL_CALL_TYPE Static_Routine(void *i_pContext)
     {
-        CClFile *l_pRoutine = static_cast<CClFile *>(i_pContext);
-        if (l_pRoutine)
-        {
-            l_pRoutine->Routine();
-        }
+       try
+       {
+            CClFile *l_pRoutine = static_cast<CClFile *>(i_pContext);
+            if (l_pRoutine)
+            {
+                l_pRoutine->Routine();
+            }
 
-        CThShell::Cleanup();
-        return THSHELL_RET_OK;
+            CThShell::Cleanup();
+            return THSHELL_RET_OK;
+        }
+        catch(...)
+        {
+            printf("There is some exception in internal P7 library thread!");
+            return THSHELL_RET_NOK;
+        }
     } 
 
     void  Routine();

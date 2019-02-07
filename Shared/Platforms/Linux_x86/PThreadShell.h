@@ -24,7 +24,7 @@
 #define THSHELL_RET_TYPE void*
 
 #define THSHELL_RET_OK   NULL
-#define THSHELL_RET_NOK  0xDEAD
+#define THSHELL_RET_NOK  ((void*)0xDEAD)
 
 #include <unistd.h>
 
