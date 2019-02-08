@@ -113,7 +113,9 @@ p7_logger_raii::~p7_logger_raii()
 p7_logger& p7_logger_raii::instance()
 {
    //assert(m_instance);
-   if (m_instance == nullptr) {
+   if (m_instance == nullptr)
+   {
+      std::cout << "init P7 logger";
       m_instance = new p7_logger("/P7.Sink=Null");
       P7_Set_Crash_Handler();
    }
