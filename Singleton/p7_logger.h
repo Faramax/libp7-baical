@@ -80,7 +80,8 @@ struct DLL_PUBLIC p7_logger_raii
    static p7_logger& instance();
 
 private:
-   void deinit();
+   static void deinit();
+   static void init(char const* opts);
 
 private:
    static p7_logger* m_instance;

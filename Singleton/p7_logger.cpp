@@ -100,33 +100,38 @@ void p7_logger::set_verbosity(eP7Trace_Level const& level)
 p7_logger_raii::p7_logger_raii(char const* opts)
 {
    deinit();
-   m_instance = new p7_logger(opts);
-   P7_Set_Crash_Handler();
+   init(opts);
 }
 
 p7_logger_raii::~p7_logger_raii()
 {
    deinit();
-   P7_Clr_Crash_Handler();
 }
 
 p7_logger& p7_logger_raii::instance()
 {
-   //assert(m_instance);
    if (m_instance == nullptr)
    {
       std::cout << "init P7 logger";
-      m_instance = new p7_logger("/P7.Sink=Null");
-      P7_Set_Crash_Handler();
+      init("/P7.Sink=Null");
    }
    return *m_instance;
+}
+
+void p7_logger_raii::init(char const* opts)
+{
+   m_instance = new p7_logger("/P7.Sink=Null");
+   P7_Set_Crash_Handler();
 }
 
 void p7_logger_raii::deinit()
 {
    if(m_instance)
+   {
+      P7_Clr_Crash_Handler();
       delete m_instance;
-   m_instance = nullptr;
+      m_instance = nullptr;
+   }
 }
 
 p7_beam::p7_beam(tUINT16 tid)
