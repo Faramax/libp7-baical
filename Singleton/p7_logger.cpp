@@ -112,15 +112,16 @@ p7_logger& p7_logger_raii::instance()
 {
    if (m_instance == nullptr)
    {
-      std::cout << "init P7 logger";
-      init("/P7.Sink=Null");
+      char const* const default_opts = "/P7.Sink=Null";
+      std::cout << "Default init P7 logger with: \"" << default_opts << "\"\n";
+      init(default_opts);
    }
    return *m_instance;
 }
 
 void p7_logger_raii::init(char const* opts)
 {
-   m_instance = new p7_logger("/P7.Sink=Null");
+   m_instance = new p7_logger(opts);
    P7_Set_Crash_Handler();
 }
 
