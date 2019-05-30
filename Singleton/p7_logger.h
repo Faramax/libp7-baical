@@ -56,7 +56,7 @@ public:
 /*! Будьте внимательны, module_index не должен превышать размер вектора,
  * переданный при инициализации модулей. */
    IP7_Trace::hModule   module(size_t module_index);
-   IP7_Trace&           trace();
+   IP7_Trace*           trace();
    IP7_Telemetry*       telemetry();
    p7_beam              create_beam(const tXCHAR  *i_pName,  tDOUBLE i_llMin, tDOUBLE i_dbAlarmMin,
                                     tDOUBLE i_llMax, tDOUBLE i_dbAlarmMax);
@@ -77,7 +77,16 @@ struct DLL_PUBLIC p7_logger_raii
    p7_logger_raii(char const* opts);
    ~p7_logger_raii();
 
-   static p7_logger& instance();
+   inline static p7_logger*           instance(){return m_instance;}
+
+   inline static void                 set_verbosity(size_t module_idx, eP7Trace_Level const& level)
+   {
+      if(instance()) instance()->set_verbosity(module_idx, level);
+   }
+   inline static void                 set_verbosity(eP7Trace_Level const& level)
+   {
+      if(instance()) instance()->set_verbosity(level);
+   }
 
 private:
    static void deinit();
@@ -88,14 +97,22 @@ private:
 };
 
 #ifdef USE_P7_LOG
-#define P7_LOG(log_level, module_enum, format, ...)\
-   p7_logger_raii::instance().trace().P7_DELIVER(0,\
-                                            log_level,\
-                                            p7_logger_raii::instance().module(static_cast<size_t>(module_enum)),\
-                                            format,\
-                                            ##__VA_ARGS__)
+   template<class ...Args>
+   inline void P7_LOG(eP7Trace_Level log_level, size_t module_enum, char const* format, Args... args)
+   {                                                     \
+      auto logger_instance = p7_logger_raii::instance(); \
+      if(logger_instance)                                \
+      {                                                  \
+         logger_instance->trace()->P7_DELIVER(           \
+            0,                                           \
+            log_level,                                   \
+            logger_instance->module(static_cast<size_t>(module_enum)),\
+            format,                                      \
+            args...);                                    \
+      }                                                  \
+   }
 #else // USE_P7_LOG
-#define P7_LOG(...)
+   #define P7_LOG(...)
 #endif // USE_P7_LOG
 
 #define P7_LOG_TRACE(module_enum, format, ...) P7_LOG(EP7TRACE_LEVEL_TRACE,\

@@ -55,9 +55,9 @@ IP7_Trace::hModule p7_logger::module(size_t u)
    return u < m_modules.size() ? m_modules[u] : NULL;
 }
 
-IP7_Trace &p7_logger::trace()
+IP7_Trace* p7_logger::trace()
 {
-   return *m_trace;
+   return m_trace;
 }
 
 IP7_Telemetry *p7_logger::telemetry()
@@ -69,7 +69,10 @@ p7_beam p7_logger::create_beam(const tXCHAR  *i_pName,
                                tDOUBLE i_dbMin, tDOUBLE i_dbAlarmMin,
                                tDOUBLE i_dbMax, tDOUBLE i_dbAlarmMax)
 {
-   IP7_Telemetry* telemetry = p7_logger_raii::instance().telemetry();
+   auto instance = p7_logger_raii::instance();
+   if(!instance)
+      return false;
+   IP7_Telemetry* telemetry = instance->telemetry();
    if(!telemetry)
       return 0;
    tUINT16 tid{};
@@ -108,17 +111,6 @@ p7_logger_raii::~p7_logger_raii()
    deinit();
 }
 
-p7_logger& p7_logger_raii::instance()
-{
-   if (m_instance == nullptr)
-   {
-      char const* const default_opts = "/P7.Sink=Null";
-      std::cout << "Default init P7 logger with: \"" << default_opts << "\"\n";
-      init(default_opts);
-   }
-   return *m_instance;
-}
-
 void p7_logger_raii::init(char const* opts)
 {
    m_instance = new p7_logger(opts);
@@ -141,7 +133,10 @@ p7_beam::p7_beam(tUINT16 tid)
 
 bool p7_beam::add(tDOUBLE i_llValue)
 {
-   IP7_Telemetry* telemetry = p7_logger_raii::instance().telemetry();
+   auto instance = p7_logger_raii::instance();
+   if(!instance)
+      return false;
+   IP7_Telemetry* telemetry = instance->telemetry();
    if(!telemetry)
       return false;
    return telemetry->Add(m_tid, i_llValue);
