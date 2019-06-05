@@ -19,8 +19,6 @@
 #ifndef GTYPE_H
 #define GTYPE_H
 
-#include "P7_Export.h"
-
 #if   defined(_M_X64)\
    || defined(__amd64__)\
    || defined(__amd64)\
@@ -60,6 +58,8 @@
 
     #define SHARED_EXT        L"dll"
 
+    #define P7_EXPORT __declspec(dllexport)
+
 ////////////////////////////////////////////////////////////////////////////////
 //LINUX specific definitions & types
 #elif defined(__linux__)
@@ -92,6 +92,8 @@
             #define __forceinline  __attribute__((always_inline))
         #endif
     #endif
+
+    #define P7_EXPORT __attribute__ ((visibility ("default")))
 
 #endif
 

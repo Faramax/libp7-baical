@@ -144,7 +144,7 @@ static __attribute__ ((unused)) tUINT64 PackLocalTime(tUINT32 i_uiYear,
                                                       tUINT32 i_uiNanoseconds
                                                      )
 {
-    tm l_stTime = {};
+    tm l_stTime = {0};
     l_stTime.tm_year  = (int)i_uiYear - 1900;
     l_stTime.tm_mon   = (int)i_uiMonth - 1;
     l_stTime.tm_mday  = (int)i_uiDay;
