@@ -57,9 +57,9 @@ int main(int i_iArgC, char* i_pArgV[])
     //send few trace messages
     for (tUINT64 l_qwI = 0ULL; l_qwI < 100000ULL; l_qwI ++)
     {
-        l_pTrace->P7_TRACE(l_hModule, TM("Test trace message #%d, {%I64d}"), l_dwIdx ++, l_qwI);
-        l_pTrace->P7_INFO(l_hModule, TM("Test info message #%d, {%I64d}"), l_dwIdx ++, l_qwI);
-        l_pTrace->P7_DEBUG(l_hModule, TM("Test debug message #%d, {%I64d}"), l_dwIdx ++, l_qwI);
+        l_pTrace->P7_TRACE(l_hModule, TM("Test trace message #%d\n, {%I64d}"), l_dwIdx ++, l_qwI);
+        l_pTrace->P7_INFO(l_hModule, TM("Test info message #%d, {%I64d}\n"), l_dwIdx ++, l_qwI);
+        l_pTrace->P7_DEBUG(l_hModule, TM("Test debug\n message #%d, {%I64d}"), l_dwIdx ++, l_qwI);
 
         if (0xF == (rand() & 0xF))
         {
@@ -76,12 +76,6 @@ int main(int i_iArgC, char* i_pArgV[])
             l_pTrace->P7_CRITICAL(l_hModule, TM("Test critical message #%d, {%I64d}"), l_dwIdx ++, l_qwI);
         }
     }
-    l_pTrace->P7_TRACE(l_hModule, TM("Test a message without additional args"));
-    l_pTrace->P7_INFO(l_hModule, TM("Test a message without additional args"));
-    l_pTrace->P7_DEBUG(l_hModule, TM("Test a message without additional args"));
-    l_pTrace->P7_WARNING(l_hModule, TM("Test a message without additional args"));
-    l_pTrace->P7_ERROR(l_hModule, TM("Test a message without additional args"));
-    l_pTrace->P7_CRITICAL(l_hModule, TM("Test a message without additional args"));
 
     l_pTrace->Unregister_Thread(0);
 
