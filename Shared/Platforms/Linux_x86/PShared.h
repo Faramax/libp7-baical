@@ -27,7 +27,7 @@
 #include <semaphore.h>
 #include <sys/mman.h>
 #include <sys/stat.h>        /* For mode constants */
-
+#include <iostream>
 
 ////////////////////////////////////////////////////////////////////////////////
 //CShared
@@ -416,9 +416,10 @@ public:
         Create_Name(l_pName, l_szName, ETYPE_MUTEX, i_pName);
 
         //check is it existing or not
-        l_hSem = sem_open(l_pName, O_CREAT | O_EXCL);
+        l_hSem = sem_open(l_pName, O_CREAT | O_EXCL, 0644, 0);
         if (SEM_FAILED != l_hSem) //it wasn't existing = ERROR
         {
+
             sem_close(l_hSem);
             sem_unlink(l_pName);
             l_hSem = SEM_FAILED;
@@ -427,7 +428,7 @@ public:
             goto l_lblExit;
         }
 
-        l_hSem = sem_open(l_pName, O_CREAT);
+        l_hSem = sem_open(l_pName, O_CREAT, 0644, 0);
         if (SEM_FAILED == l_hSem)
         {
             l_eReturn = CShared::E_NOT_EXISTS;
@@ -496,7 +497,7 @@ public:
         Create_Name(l_pName, l_szName, ETYPE_MUTEX, i_pName);
 
         //check is it existing or not
-        l_hSem = sem_open(l_pName, O_CREAT | O_EXCL);
+        l_hSem = sem_open(l_pName, O_CREAT | O_EXCL, 0644, 0);
         if (SEM_FAILED != l_hSem) //it wasn't existing = ERROR
         {
             sem_close(l_hSem);
@@ -507,7 +508,7 @@ public:
             goto l_lblExit;
         }
 
-        l_hSem = sem_open(l_pName, O_CREAT);
+        l_hSem = sem_open(l_pName, O_CREAT, 0644, 0);
         if (SEM_FAILED == l_hSem)
         {
             l_eReturn = CShared::E_NOT_EXISTS;
