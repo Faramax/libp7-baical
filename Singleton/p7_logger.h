@@ -97,20 +97,16 @@ private:
 };
 
 #ifdef USE_P7_LOG
-   template<class ...Args>
-   inline void P7_LOG(eP7Trace_Level log_level, size_t module_enum, char const* format, Args... args)
-   {                                                     \
-      auto logger_instance = p7_logger_raii::instance(); \
-      if(logger_instance)                                \
-      {                                                  \
-         logger_instance->trace()->P7_DELIVER(           \
-            0,                                           \
-            log_level,                                   \
-            logger_instance->module(static_cast<size_t>(module_enum)),\
-            format,                                      \
-            args...);                                    \
-      }                                                  \
-   }
+   #define P7_LOG(log_level, module_enum, format, ...)                              \
+      p7_logger_raii::instance() ?                                                  \
+         p7_logger_raii::instance()->trace()->P7_DELIVER                            \
+            (                                                                       \
+               0,                                                                   \
+               log_level,                                                           \
+               p7_logger_raii::instance()->module(static_cast<size_t>(module_enum)),\
+               format,                                                              \
+               ##__VA_ARGS__                                                        \
+            ) : false
 #else // USE_P7_LOG
    #define P7_LOG(...)
 #endif // USE_P7_LOG
