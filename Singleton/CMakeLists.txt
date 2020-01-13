@@ -1,8 +1,17 @@
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED 1)
 
-add_library(p7_logger_lib STATIC
+set(TARGET p7_logger_lib)
+set(SOURCE
    p7_logger.h
-   p7_logger.cpp)
-target_link_libraries(p7_logger_lib P7)
-target_include_directories(p7_logger_lib PUBLIC ./ ../ ../Headers)
+   p7_logger.cpp
+   )
+
+if (P7_LOGGER_SHARED_LIB)
+   add_library(${TARGET} SHARED ${SOURCE})
+else()
+   add_library(${TARGET} STATIC ${SOURCE})
+endif()
+
+target_link_libraries(${TARGET} P7)
+target_include_directories(${TARGET} PUBLIC ./ ../ ../Headers)

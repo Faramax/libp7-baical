@@ -215,6 +215,7 @@ endif(BUILD_EXAMPLES)
 ##########################
 #         Addons         #
 ##########################
+option(SINGLETON_SHARED_LIB " Singleton shared lib" ON)
 add_subdirectory(Singleton)
 
 ##########################
