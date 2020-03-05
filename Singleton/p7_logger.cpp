@@ -124,6 +124,7 @@ void p7_logger_raii::deinit()
       P7_Clr_Crash_Handler();
       delete m_instance;
       m_instance = nullptr;
+      std::cout << "P7 has been deinited." << std::endl;
    }
 }
 
