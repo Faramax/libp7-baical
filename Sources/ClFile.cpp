@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                             /
-// 2012-2019 (c) Baical                                                        /
+// 2012-2020 (c) Baical                                                        /
 //                                                                             /
 // This library is free software; you can redistribute it and/or               /
 // modify it under the terms of the GNU Lesser General Public                  /
@@ -26,8 +26,14 @@
 #define  THREAD_IDLE_TIMEOUT                                                (10)
 #define  THREAD_WRITE_TIMEOUT                                            (15000)
 
-#define  THREAD_EXIT_SIGNAL                                    (MEVENT_SIGNAL_0)
-#define  THREAD_DATA_SIGNAL                                (MEVENT_SIGNAL_0 + 1)
+
+enum eThreadsEvents
+{
+    eThreadEventExit = MEVENT_SIGNAL_0,
+    eThreadEventHasData,
+    eThreadEventDataFlush,
+    eThreadEventsCount = 3
+};
 
 #define  MIN_BUFFER_SIZE                                                 (16384)
 #define  MAX_BUFFER_SIZE                                                (131072)
@@ -106,7 +112,7 @@ CClFile::~CClFile()
 {
     Uninit_Crash_Handler();
 
-    Flush();
+    Close();
 
     if (m_pBuffer_Current)
     {
@@ -224,6 +230,7 @@ eClient_Status CClFile::Init_Pool(tXCHAR **i_pArgs,
                       l_dwBuffers_Count
                     );
         l_eReturn = ECLIENT_STATUS_INTERNAL_ERROR;
+        P7_Set_Last_Error(eP7_Error_UserSettings);
         goto l_lblExit;
     }
 
@@ -243,6 +250,7 @@ eClient_Status CClFile::Init_Pool(tXCHAR **i_pArgs,
         {
             JOURNAL_ERROR(m_pLog, TM("Pool: Memory calculation failed"));
             l_eReturn = ECLIENT_STATUS_INTERNAL_ERROR;
+            P7_Set_Last_Error(eP7_Error_MemoryAllocation);
             goto l_lblExit;
         }
     }
@@ -267,6 +275,7 @@ eClient_Status CClFile::Init_Pool(tXCHAR **i_pArgs,
     {
         JOURNAL_ERROR(m_pLog, TM("Pool: Not enough memory"));
         l_eReturn = ECLIENT_STATUS_INTERNAL_ERROR;
+        P7_Set_Last_Error(eP7_Error_UserSettings);
         goto l_lblExit;
     }
 
@@ -336,6 +345,7 @@ eClient_Status CClFile::Init_File(tXCHAR **i_pArgs,
         {
             JOURNAL_ERROR(m_pLog, TM("Can't create directory: %s"), l_pArgV);
             l_eReturn = ECLIENT_STATUS_NOT_ALLOWED;
+            P7_Set_Last_Error(eP7_Error_FolderCreation);
             goto l_lblExit;
         }
     }
@@ -383,7 +393,8 @@ eClient_Status CClFile::Init_File(tXCHAR **i_pArgs,
     l_eReturn = Create_File();
     if (ECLIENT_STATUS_OK != l_eReturn)
     {
-        JOURNAL_ERROR(m_pLog, TM("File creation failed"), l_pArgV);
+        P7_Set_Last_Error(eP7_Error_FileCreation);
+        JOURNAL_ERROR(m_pLog, TM("File creation failed {%s}"), l_pArgV);
         goto l_lblExit;
     }
 
@@ -488,8 +499,9 @@ eClient_Status CClFile::Init_Thread(tXCHAR **i_pArgs,
 
     if (ECLIENT_STATUS_OK == l_eReturn)
     {
-        if (FALSE == m_cEvent.Init(2, EMEVENT_SINGLE_AUTO, EMEVENT_MULTI))
+        if (FALSE == m_cEvent.Init(eThreadEventsCount, EMEVENT_SINGLE_AUTO, EMEVENT_MULTI, EMEVENT_SINGLE_AUTO))
         {
+            P7_Set_Last_Error(eP7_Error_OS);
             l_eReturn = ECLIENT_STATUS_INTERNAL_ERROR;
             JOURNAL_ERROR(m_pLog, TM("Exit event wasn't created !"));
         }
@@ -504,6 +516,7 @@ eClient_Status CClFile::Init_Thread(tXCHAR **i_pArgs,
                                      )
            )
         {
+            P7_Set_Last_Error(eP7_Error_OS);
             l_eReturn      = ECLIENT_STATUS_INTERNAL_ERROR;
             JOURNAL_ERROR(m_pLog, TM("Communication thread wasn't created !"));
         }
@@ -547,7 +560,7 @@ eClient_Status CClFile::Create_File()
     {
         PSPrint(l_pFile_Name, 
                 LENGTH(l_pFile_Name), 
-                TM("/%04d%02d%02d-%02d%02d%02d%03d.") P7_EXT,
+                TM("/%04d%02d%02d-%02d%02d%02d.%03d.") P7_EXT,
                 l_dwYear, 
                 l_dwMonth,
                 l_dwDay,
@@ -854,9 +867,8 @@ eClient_Status CClFile::Sent(tUINT32          i_dwChannel_ID,
                         m_cBuffer_Ready.Add_After(m_cBuffer_Ready.Get_Last(), 
                                                   m_pBuffer_Current
                                                  );
-                        m_qwFile_Size    += m_pBuffer_Current->szUsed;
                         m_pBuffer_Current = NULL;
-                        m_cEvent.Set(THREAD_DATA_SIGNAL);
+                        m_cEvent.Set(eThreadEventHasData);
                     }
                 }
             }
@@ -874,9 +886,8 @@ eClient_Status CClFile::Sent(tUINT32          i_dwChannel_ID,
                 m_cBuffer_Ready.Add_After(m_cBuffer_Ready.Get_Last(), 
                                           m_pBuffer_Current
                                          );
-                m_qwFile_Size    += m_pBuffer_Current->szUsed;
                 m_pBuffer_Current = NULL;
-                m_cEvent.Set(THREAD_DATA_SIGNAL);
+                m_cEvent.Set(eThreadEventHasData);
             }
         } //while ( (m_pBuffer_Current) && (i_dwCount) )
     } //while (FALSE == l_bExit)
@@ -915,7 +926,7 @@ tBOOL CClFile::Get_Info(sP7C_Info *o_pInfo)
 
 ////////////////////////////////////////////////////////////////////////////////
 //Flush
-tBOOL CClFile::Flush()
+tBOOL CClFile::Close()
 {
     tBOOL l_bStack_Trace = TRUE;
 
@@ -925,18 +936,21 @@ tBOOL CClFile::Flush()
     l_sStatus.bConnected = FALSE;
     l_sStatus.dwResets   = 0;
 
-    LOCK_ENTER(m_hCS_Reg);
-    for (tUINT32 l_dwI = 0; l_dwI < USER_PACKET_CHANNEL_ID_MAX_SIZE; l_dwI++)
+    if (m_bFlushChannels)
     {
-        if (m_pChannels[l_dwI])
+        LOCK_ENTER(m_hCS_Reg);
+        for (tUINT32 l_dwI = 0; l_dwI < USER_PACKET_CHANNEL_ID_MAX_SIZE; l_dwI++)
         {
-            m_pChannels[l_dwI]->On_Flush(l_dwI, &l_bStack_Trace);
-            m_pChannels[l_dwI]->On_Status(l_dwI, &l_sStatus);
+            if (m_pChannels[l_dwI])
+            {
+                m_pChannels[l_dwI]->On_Flush(l_dwI, &l_bStack_Trace);
+                m_pChannels[l_dwI]->On_Status(l_dwI, &l_sStatus);
+            }
         }
+        LOCK_EXIT(m_hCS_Reg);
     }
-    LOCK_EXIT(m_hCS_Reg);
 
-    m_cEvent.Set(THREAD_EXIT_SIGNAL);
+    m_cEvent.Set(eThreadEventExit);
 
     if (m_bThread)
     {
@@ -1009,6 +1023,14 @@ tBOOL CClFile::Flush()
 
     return TRUE;
 }//Flush
+
+
+////////////////////////////////////////////////////////////////////////////////
+//Flush
+void CClFile::Flush()
+{
+    m_cEvent.Set(eThreadEventDataFlush);
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1195,15 +1217,11 @@ void CClFile::Routine()
     {
         l_dwSignal = m_cEvent.Wait(l_dwWait_TimeOut);
 
-        if (THREAD_EXIT_SIGNAL == l_dwSignal)
-        {
-            l_bExit = TRUE;
-        }
-        else if (    (THREAD_DATA_SIGNAL == l_dwSignal) //one buffer to write!
-                  || (    (MEVENT_TIME_OUT == l_dwSignal)
-                       && (CTicks::Difference(GetTickCount(), l_uWriteTick) > THREAD_WRITE_TIMEOUT)
-                     )
+        if (    (eThreadEventHasData == l_dwSignal) //one buffer to write!
+             || (    (MEVENT_TIME_OUT == l_dwSignal)
+                  && (CTicks::Difference(GetTickCount(), l_uWriteTick) > THREAD_WRITE_TIMEOUT)
                 )
+           )
         {
             l_dwWait_TimeOut = 0;
 
@@ -1228,6 +1246,11 @@ void CClFile::Routine()
                     l_pBuffer = m_cBuffer_Ready.Get_Data(l_pEl);
                     m_cBuffer_Ready.Del(l_pEl, FALSE);
                 }
+                else
+                {
+                    l_pBuffer = m_pBuffer_Current;
+                    m_pBuffer_Current = 0;
+                }
             }
 
             LOCK_EXIT(m_hCS); 
@@ -1236,6 +1259,8 @@ void CClFile::Routine()
             //writing data
             if (l_pBuffer)
             {
+                m_qwFile_Size += l_pBuffer->szUsed;
+
                 if (    (m_bConnected)
                      && (l_pBuffer->szUsed > m_cFile.Write(l_pBuffer->pBuffer,
                                                            l_pBuffer->szUsed, 
@@ -1269,6 +1294,24 @@ void CClFile::Routine()
         {
             l_dwWait_TimeOut = THREAD_IDLE_TIMEOUT;
         }
+        else if (eThreadEventExit == l_dwSignal)
+        {
+            l_bExit = TRUE;
+        }
+        else if (eThreadEventDataFlush == l_dwSignal)
+        {
+            LOCK_ENTER(m_hCS);
+            if (    (m_pBuffer_Current)
+                 && (m_pBuffer_Current->szUsed)
+               )
+            {
+                m_cBuffer_Ready.Add_After(m_cBuffer_Ready.Get_Last(), m_pBuffer_Current);
+                m_pBuffer_Current = NULL;
+                m_cEvent.Set(eThreadEventHasData);
+            }
+            LOCK_EXIT(m_hCS);
+        }
+
 
         if (EROLLING_HOURS == m_eRolling)
         {

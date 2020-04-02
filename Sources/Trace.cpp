@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                             /
-// 2012-2019 (c) Baical                                                        /
+// 2012-2020 (c) Baical                                                        /
 //                                                                             /
 // This library is free software; you can redistribute it and/or               /
 // modify it under the terms of the GNU Lesser General Public                  /
@@ -125,32 +125,46 @@ P7_EXPORT IP7_Trace * __cdecl P7_Create_Trace(IP7_Client         *i_pClient,
 //P7_Get_Shared_Trace
 P7_EXPORT IP7_Trace * __cdecl P7_Get_Shared_Trace(const tXCHAR *i_pName)
 {
-    size_t     l_szPadding = 16;
-    IP7_Trace *l_pReturn   = NULL;
-    tUINT32    l_dwLen1    = PStrLen(TRACE_SHARED_PREFIX);
-    tUINT32    l_dwLen2    = PStrLen(i_pName);
-    tXCHAR    *l_pName     = (tXCHAR *)malloc(sizeof(tXCHAR) * (l_dwLen1 + l_dwLen2 + l_szPadding));
+    size_t        l_szPadding = 16;
+    IP7_Trace    *l_pReturn   = NULL;
+    tUINT32       l_dwLen1    = PStrLen(TRACE_SHARED_PREFIX);
+    tUINT32       l_dwLen2    = PStrLen(i_pName);
+    tXCHAR       *l_pName     = (tXCHAR *)malloc(sizeof(tXCHAR) * (l_dwLen1 + l_dwLen2 + l_szPadding));
+    tUINT32       l_uTimeHi   = 0;
+    tUINT32       l_uTimeLo   = 0;
+    sObjShared    l_stShared  = {};
+    CShared::hSem l_hSem      = SHARED_SEM_NULL;
+
+
+    CProc::Get_Process_Time(&l_uTimeHi, &l_uTimeLo);
 
     if (l_pName)
     {
         PStrCpy(l_pName, l_dwLen1 + l_dwLen2 + l_szPadding, TRACE_SHARED_PREFIX);
         PStrCpy(l_pName + l_dwLen1, l_dwLen2 + l_szPadding, i_pName);
-        if (CShared::E_OK == CShared::Lock(l_pName, 250))
+
+        if (CShared::E_OK == CShared::Lock(l_pName, l_hSem, 250))
         {
-            if (CShared::Read(l_pName, (tUINT8*)&l_pReturn, sizeof(IP7_Trace*)))
+            if (CShared::Read(l_pName, (tUINT8*)&l_stShared, sizeof(l_stShared)))
             {
-                if (l_pReturn)
+                if (    (l_stShared.uProcTimeHi == l_uTimeHi)
+                     && (l_stShared.uProcTimeLo == l_uTimeLo)
+                   )
                 {
-                    l_pReturn->Add_Ref();
+                    l_pReturn = static_cast<IP7_Trace *>(l_stShared.pPointer);
+                    if (l_pReturn)
+                    {
+                        l_pReturn->Add_Ref();
+                    }
+                }
+                else
+                {
+                    CShared::UnLink(l_pName);
                 }
             }
-            else
-            {
-                l_pReturn = NULL;
-            }
-        }
 
-        CShared::UnLock(l_pName);
+            CShared::UnLock(l_hSem);
+        }
 
         free(l_pName);
         l_pName = NULL;
@@ -1004,6 +1018,7 @@ CP7Trace::CP7Trace(IP7_Client         *i_pClient,
 
     memset(&m_sHeader_Info, 0, sizeof(m_sHeader_Info));
     memset(&m_sHeader_Data, 0, sizeof(m_sHeader_Data));
+    memset(&m_sHeader_Utc, 0, sizeof(m_sHeader_Utc));
     memset(m_pDesc_Array, 0, sizeof(m_pDesc_Array));
 
     m_sStatus.bConnected = TRUE;
@@ -1012,6 +1027,7 @@ CP7Trace::CP7Trace(IP7_Client         *i_pClient,
     if (NULL == m_pClient)
     {
         m_bInitialized = FALSE;
+        P7_Set_Last_Error(eP7_Error_NoClient);
     }
     else
     {
@@ -1033,6 +1049,11 @@ CP7Trace::CP7Trace(IP7_Client         *i_pClient,
     if (m_bInitialized)
     {
         m_bInitialized = Inc_Chunks(256);
+
+        if (!m_bInitialized)
+        {
+            P7_Set_Last_Error(eP7_Error_MemoryAllocation);
+        }
     }
 
     if (m_bInitialized)
@@ -1068,13 +1089,24 @@ CP7Trace::CP7Trace(IP7_Client         *i_pClient,
 
         GetEpochTime(&m_sHeader_Info.dwTime_Hi, &m_sHeader_Info.dwTime_Lo);
 
-        m_sHeader_Info.qwFlags = P7TRACE_INFO_FLAG_EXTENTION;
+        m_sHeader_Info.qwFlags = P7TRACE_INFO_FLAG_EXTENTION | P7TRACE_INFO_FLAG_TIME_ZONE;
 
         //Add main header to delivery chunks list
         m_pChk_Curs->dwSize = sizeof(m_sHeader_Info);
         m_pChk_Curs->pData  = &m_sHeader_Info;
         m_dwChk_Size       += m_pChk_Curs->dwSize;
 
+        m_pChk_Curs ++;
+
+        //Add utc offset information
+        INIT_EXT_HEADER(m_sHeader_Utc.sCommonRaw, EP7USER_TYPE_TRACE, EP7TRACE_TYPE_UTC_OFFS, sizeof(m_sHeader_Utc));
+        m_sHeader_Utc.iUtcOffsetSec = GetUtcOffsetSeconds();
+        
+        //Add utc header to delivery chunks list
+        m_pChk_Curs->dwSize = sizeof(m_sHeader_Utc);
+        m_pChk_Curs->pData  = &m_sHeader_Utc;
+        m_dwChk_Size       += m_pChk_Curs->dwSize;
+        
         m_pChk_Curs ++;
     }
 
@@ -1154,6 +1186,10 @@ CP7Trace::CP7Trace(IP7_Client         *i_pClient,
     {
         m_bIs_Channel  = (ECLIENT_STATUS_OK == m_pClient->Register_Channel(this));
         m_bInitialized = m_bIs_Channel;
+        if (!m_bInitialized)
+        {
+            P7_Set_Last_Error(eP7_Error_NoFreeChannels);
+        }
     }
 
 #if defined(P7TRACE_NO_VA_ARG_OPTIMIZATION)
@@ -1383,6 +1419,13 @@ void CP7Trace::On_Status(tUINT32 i_dwChannel, const sP7C_Status *i_pStatus)
             //Add main header to delivery chunks list
             m_pChk_Curs->dwSize = sizeof(m_sHeader_Info);
             m_pChk_Curs->pData  = &m_sHeader_Info;
+            m_dwChk_Size       += m_pChk_Curs->dwSize;
+
+            m_pChk_Curs ++;
+
+            //Add utc offset header to delivery chunks list
+            m_pChk_Curs->dwSize = sizeof(m_sHeader_Utc);
+            m_pChk_Curs->pData  = &m_sHeader_Utc;
             m_dwChk_Size       += m_pChk_Curs->dwSize;
 
             m_pChk_Curs ++;
@@ -1959,6 +2002,28 @@ l_lblExit:
 
 
 ////////////////////////////////////////////////////////////////////////////////
+// Get_Verbosity                                      
+eP7Trace_Level CP7Trace::Get_Verbosity(IP7_Trace::hModule i_hModule)
+{
+    eP7Trace_Level l_eReturn = EP7TRACE_LEVEL_COUNT;
+    LOCK_ENTER(m_sCS);
+
+    if (i_hModule)
+    {
+        l_eReturn = ((sP7Trace_Module*)i_hModule)->eVerbosity;
+    }
+    else
+    {
+        l_eReturn = m_eVerbosity;
+    }
+
+    LOCK_EXIT(m_sCS);
+
+    return l_eReturn;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 // Trace                                      
 tBOOL CP7Trace::Trace(tUINT16            i_wTrace_ID,
                       eP7Trace_Level     i_eLevel, 
@@ -2010,17 +2075,53 @@ tBOOL CP7Trace::Share(const tXCHAR *i_pName)
     LOCK_ENTER(m_sCS);
     if (NULL == m_hShared)
     {
-        void *l_pTrace = static_cast<IP7_Trace*>(this);
-
-        tUINT32 l_dwLen1 = PStrLen(TRACE_SHARED_PREFIX);
-        tUINT32 l_dwLen2 = PStrLen(i_pName);
-        tXCHAR *l_pName = (tXCHAR *)malloc(sizeof(tXCHAR) * (l_dwLen1 + l_dwLen2 + 16));
+        tUINT32       l_dwLen1 = PStrLen(TRACE_SHARED_PREFIX);
+        tUINT32       l_dwLen2 = PStrLen(i_pName);
+        tXCHAR       *l_pName = (tXCHAR *)malloc(sizeof(tXCHAR) * (l_dwLen1 + l_dwLen2 + 16));
+        CShared::hSem l_hSem  = SHARED_SEM_NULL;
 
         if (l_pName)
         {
+            sObjShared l_stShared = {};
+            tUINT32    l_uTimeHi  = 0;
+            tUINT32    l_uTimeLo  = 0;
+            tBOOL      l_bCreate  = TRUE;
+
+            CProc::Get_Process_Time(&l_uTimeHi, &l_uTimeLo);
+
             PStrCpy(l_pName, l_dwLen1 + l_dwLen2 + 16, TRACE_SHARED_PREFIX);
             PStrCpy(l_pName + l_dwLen1, l_dwLen2 + 16, i_pName);
-            l_bReturn = CShared::Create(&m_hShared, l_pName, (tUINT8*)&l_pTrace, sizeof(l_pTrace));
+
+            //JOURNAL_WARNING(m_pLog, TM("Shared memory {%s} registration error"), l_pName);
+            if (CShared::E_OK == CShared::Lock(l_pName, l_hSem, 250))
+            {
+                l_bCreate = FALSE; //it is already existing
+
+                if (CShared::Read(l_pName, (tUINT8*)&l_stShared, sizeof(l_stShared)))
+                {
+                    if (    (l_stShared.uProcTimeHi != l_uTimeHi)
+                         || (l_stShared.uProcTimeLo != l_uTimeLo)
+                       )
+                    {
+                        //JOURNAL_ERROR(m_pLog, TM("Shared memory timestamp error, prev. session crashed or forget to release P7 objects?"));
+                        CShared::UnLink(l_pName);
+                        l_bCreate = TRUE;
+                    }
+                }
+
+                CShared::UnLock(l_hSem);
+            }
+
+            if (l_bCreate)
+            {
+                CProc::Get_Process_Time(&l_uTimeHi, &l_uTimeLo);
+                l_stShared.pPointer    = static_cast<IP7_Trace*>(this);
+                l_stShared.uProcTimeHi = l_uTimeHi;
+                l_stShared.uProcTimeLo = l_uTimeLo;
+
+                l_bReturn = CShared::Create(&m_hShared, l_pName, (tUINT8*)&l_stShared, sizeof(l_stShared));
+            }
+
             free(l_pName);
             l_pName = NULL;
         }

@@ -13,5 +13,5 @@ else()
    add_library(${TARGET} STATIC ${SOURCE})
 endif()
 
-target_link_libraries(${TARGET} P7)
+target_link_libraries(${TARGET} p7)
 target_include_directories(${TARGET} PUBLIC ./ ../ ../Headers)

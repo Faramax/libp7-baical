@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                             /
-// 2012-2019 (c) Baical                                                        /
+// 2012-2020 (c) Baical                                                        /
 //                                                                             /
 // This library is free software; you can redistribute it and/or               /
 // modify it under the terms of the GNU Lesser General Public                  /
@@ -156,6 +156,11 @@ public:
     virtual void Set_Verbosity(IP7_Trace::hModule i_hModule, 
                                eP7Trace_Level     i_eVerbosity
                               )                                             = 0;
+
+    ////////////////////////////////////////////////////////////////////////////
+    //Get_Verbosity - function to get trace verbosity. 
+    //                See documentation for details.
+    virtual eP7Trace_Level Get_Verbosity(IP7_Trace::hModule i_hModule)      = 0;
 
     ////////////////////////////////////////////////////////////////////////////
     //Register_Thread - function used to specify name for current thread. Allows

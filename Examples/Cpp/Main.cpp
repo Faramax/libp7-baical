@@ -6,17 +6,21 @@
 
 void __cdecl Telemetry_Enable(void *i_pContext, tUINT16 i_wId, tBOOL i_bEnable)
 {
+    UNUSED_ARG(i_pContext);
     printf("Id=%d, Enable=%d\n", (tUINT32)i_wId, (tUINT32)i_bEnable);
 }
 
 void __cdecl Connect(void *i_pContext, tBOOL i_bConnect)
 {
+    UNUSED_ARG(i_pContext);
     printf("Connect=%d\n", (tUINT32)i_bConnect);
 }
 
 
 int main(int i_iArgC, char* i_pArgV[])
 {
+    UNUSED_ARG(i_iArgC);
+    UNUSED_ARG(i_pArgV);
     IP7_Client        *l_pClient    = NULL;
 
     IP7_Trace         *l_pTrace     = NULL;

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                             /
-// 2012-2019 (c) Baical                                                        /
+// 2012-2020 (c) Baical                                                        /
 //                                                                             /
 // This library is free software; you can redistribute it and/or               /
 // modify it under the terms of the GNU Lesser General Public                  /
@@ -123,6 +123,7 @@ public:
 
         if (FALSE == WSA_Init())
         {
+            P7_Set_Last_Error(eP7_Error_Network);
             PRINTF(TM("Windows Socket initialization fails!"));
             l_eReturn = ECLIENT_STATUS_INTERNAL_ERROR;
         }
@@ -231,9 +232,14 @@ public:
             m_pBuffer = (tACHAR*)malloc(m_szBuffer);
             if (!m_pBuffer)
             {
+                P7_Set_Last_Error(eP7_Error_MemoryAllocation);        
                 PRINTF(TM("Memory allocation fails!"));
                 l_eReturn = ECLIENT_STATUS_INTERNAL_ERROR;
             }
+        }
+        else
+        {                           
+            P7_Set_Last_Error(eP7_Error_Network);        
         }
 
         return l_eReturn;

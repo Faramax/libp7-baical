@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                             /
-// 2012-2019 (c) Baical                                                        /
+// 2012-2020 (c) Baical                                                        /
 //                                                                             /
 // This library is free software; you can redistribute it and/or               /
 // modify it under the terms of the GNU Lesser General Public                  /
@@ -32,6 +32,7 @@
 #define CLOCK_P7 CLOCK_REALTIME
 #define TIME_MCSC_100NS                                                    10ull
 
+#define TIME_ZONE_AVALIABLE
 ////////////////////////////////////////////////////////////////////////////////
 //GetTickCount
 static __attribute__ ((unused)) tUINT32 GetTickCount()
@@ -206,4 +207,35 @@ static __attribute__ ((unused)) void GetEpochTime(tUINT32 *o_pHi, tUINT32 *o_pLo
     }
 }//GetEpochTime
 
+
+////////////////////////////////////////////////////////////////////////////////
+//GetEpochTime
+//return a 64-bit value of 100-nanosecond intervals since January 1, 1601 (UTC).
+static inline tUINT64 GetEpochTime()
+{
+    tUINT32 dwHighDateTime = 0, dwLowDateTime = 0;
+
+    GetEpochTime(&dwHighDateTime, &dwLowDateTime);
+
+    return (((tUINT64)dwHighDateTime) << 32ull) + (tUINT64)dwLowDateTime;
+}//GetEpochTime
+
+
+////////////////////////////////////////////////////////////////////////////////
+//GetUtcOffsetSeconds
+//return UTC0 offset in seconds
+static inline tINT32 GetUtcOffsetSeconds()
+{
+#if defined(TIME_ZONE_AVALIABLE)
+    time_t l_sTime = time(NULL);
+    struct tm l_stLocal = {};
+
+    tzset();
+    localtime_r(&l_sTime, &l_stLocal);
+
+    return l_stLocal.tm_gmtoff;
+#else
+    return 0;
+#endif    
+}
 #endif //PTIME_H

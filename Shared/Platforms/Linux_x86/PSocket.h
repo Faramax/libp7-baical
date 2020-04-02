@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                             /
-// 2012-2019 (c) Baical                                                        /
+// 2012-2020 (c) Baical                                                        /
 //                                                                             /
 // This library is free software; you can redistribute it and/or               /
 // modify it under the terms of the GNU Lesser General Public                  /
@@ -58,7 +58,7 @@ typedef addrinfo  tADDR_INFO;
 #define INVALID_SOCKET_VAL                                                  (-1)
                                                               //(INVALID_SOCKET)
 
-//#define CONNECTION_IN_PROGRESS                                     (EINPROGRESS)
+#define CONNECTION_IN_PROGRESS                                     (EINPROGRESS)
                                                               //(WSAEWOULDBLOCK)
 
 

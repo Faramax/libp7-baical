@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                             /
-// 2012-2019 (c) Baical                                                        /
+// 2012-2020 (c) Baical                                                        /
 //                                                                             /
 // This library is free software; you can redistribute it and/or               /
 // modify it under the terms of the GNU Lesser General Public                  /
@@ -175,6 +175,12 @@
 #define CLIENT_COMMAND_POOL_SIZE                               TM("/P7.Pool=")
 
 
+//specify do we need to flush channels inside P7_Exceptional_Flush call
+//Values: 1 = yes, 0 = no
+//default value = 1
+#define CLIENT_COMMAND_FLUSH_CHANNELS                          TM("/P7.FlashChannels=")
+
+
 //specifies log message format for such sinks like: FileTxt, Console, SysLog 
 //format example: 
 // /P7.Format="%cn #%ix [%tf] %lv Tr:#%ti:%tn CPU:%cc Md:%mn {%fs:%fl:%fn} %ms"
@@ -337,6 +343,23 @@
     TM("   there is no arguments\n")\
  
 
+//Error codes of P7 library, if you want to get extended information about error code please activate internal
+//console(Linux)/file(Windows) logging. To activate it add parameter to client "/P7.Verb=0"
+enum eP7_Error
+{
+    eP7_Error_None = 0,
+    eP7_Error_SharedObjectInvalid,
+    eP7_Error_MemoryAllocation,
+    eP7_Error_Network,
+    eP7_Error_OS,
+    eP7_Error_UserSettings,
+    eP7_Error_FolderCreation,
+    eP7_Error_FileCreation,
+    eP7_Error_NoClient,
+    eP7_Error_NoFreeChannels,
+
+    eP7_Error_Max
+};
 
 enum eClient_Status
 {
@@ -422,8 +445,7 @@ public:
                             tBOOL   i_bBigEndian
                             )                                               = 0;
 
-    virtual void On_Status(tUINT32            i_dwChannel, 
-                           const sP7C_Status *i_pStatus)                    = 0;
+    virtual void On_Status(tUINT32 i_dwChannel, const sP7C_Status *i_pStatus)=0;
 
     virtual void On_Flush(tUINT32 i_dwChannel, tBOOL *io_pCrash)            = 0;
 };
@@ -435,8 +457,10 @@ public:
 #define USER_PACKET_MAX_SIZE                  (1 << USER_PACKET_SIZE_BITS_COUNT)
 #define USER_PACKET_CHANNEL_ID_MAX_SIZE (1 << USER_PACKET_CHANNEL_ID_BITS_COUNT)
 
-
-class /*__declspec(novtable)*/ IP7_Client
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class IP7_Client
 {
 public:
     enum eType
@@ -476,6 +500,8 @@ public:
 
     virtual size_t            Get_Channels_Count()                          = 0;
     virtual IP7C_Channel     *Get_Channel(size_t i_szIndex)                 = 0;
+
+    virtual void              Flush()                                       = 0;
 };
 
 
@@ -494,7 +520,14 @@ extern "C" P7_EXPORT IP7_Client * __cdecl P7_Create_Client(const tXCHAR *i_pArgs
 //inside current process. 
 //See documentation for details.
 extern "C" P7_EXPORT IP7_Client  * __cdecl P7_Get_Shared(const tXCHAR *i_pName);
+                                                     
 
+////////////////////////////////////////////////////////////////////////////////
+//Retrieves the calling thread's last-error code value. The last-error code is 
+//maintained on a per-thread basis. Multiple threads do not overwrite each other's 
+//last-error code.
+//N.B.: Error code will be reset after function call
+extern "C" P7_EXPORT eP7_Error __cdecl P7_Last_Error();
 
 
 
@@ -530,6 +563,12 @@ extern "C" P7_EXPORT void __cdecl P7_Clr_Crash_Handler();
 //See documentation for details.
 extern "C" P7_EXPORT void __cdecl P7_Exceptional_Flush();
 
+
+////////////////////////////////////////////////////////////////////////////////
+//Function allows to flush (deliver) not  delivered/saved  P7  buffers  for  all
+//opened clients and related channels owned by process. Please do not use this 
+//function often, it may reduce performance.
+extern "C" P7_EXPORT void __cdecl P7_Flush();
 
 
 #endif //P7_CLIENT_H

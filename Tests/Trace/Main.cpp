@@ -36,6 +36,7 @@
 #include "P7_Client.h"
 #include "P7_Trace.h"
 #include "P7_Telemetry.h"
+#include "P7_Extensions.h"
 
 
 #if !defined(UINTMAX_MAX)
@@ -115,7 +116,7 @@ int Test_01(int i_iArgC, char* i_pArgV[])
         }
         else if (0 == STRNICMP(i_pArgV[l_iI], TEST_01_COUNT, LENGTH(TEST_01_COUNT)-1))
         {
-            sscanf(i_pArgV[l_iI] + LENGTH(TEST_01_COUNT)-1, "%d", &l_dwCount);
+            sscanf(i_pArgV[l_iI] + LENGTH(TEST_01_COUNT)-1, "%u", &l_dwCount);
             if (10 > l_dwCount)
             {
                 l_dwCount = 10;
@@ -493,7 +494,7 @@ int Test_02(int i_iArgC, char* i_pArgV[])
         }
         else if (0 == STRNICMP(i_pArgV[l_iI], TEST_02_CONSOLE_ARG_COUNT, LENGTH(TEST_02_CONSOLE_ARG_COUNT)-1))
         {
-            sscanf(i_pArgV[l_iI] + LENGTH(TEST_02_CONSOLE_ARG_COUNT)-1, "%d", &l_dwCount);
+            sscanf(i_pArgV[l_iI] + LENGTH(TEST_02_CONSOLE_ARG_COUNT)-1, "%u", &l_dwCount);
             if (    (1 > l_dwCount)
                  || (10 < l_dwCount)
                )
@@ -503,7 +504,7 @@ int Test_02(int i_iArgC, char* i_pArgV[])
         }
         else if (0 == STRNICMP(i_pArgV[l_iI], TEST_02_CONSOLE_ARG_SPEED, LENGTH(TEST_02_CONSOLE_ARG_SPEED)-1))
         {
-            sscanf(i_pArgV[l_iI] + LENGTH(TEST_02_CONSOLE_ARG_SPEED)-1, "%d", &l_dwSpeed);
+            sscanf(i_pArgV[l_iI] + LENGTH(TEST_02_CONSOLE_ARG_SPEED)-1, "%u", &l_dwSpeed);
             if (    (1 > l_dwSpeed)
                  || (10000 < l_dwSpeed)
                )
@@ -513,7 +514,7 @@ int Test_02(int i_iArgC, char* i_pArgV[])
         }
         else if (0 == STRNICMP(i_pArgV[l_iI], TEST_02_CONSOLE_ARG_DURATION, LENGTH(TEST_02_CONSOLE_ARG_DURATION)-1))
         {
-            sscanf(i_pArgV[l_iI] + LENGTH(TEST_02_CONSOLE_ARG_DURATION)-1, "%d", &l_dwDuration);
+            sscanf(i_pArgV[l_iI] + LENGTH(TEST_02_CONSOLE_ARG_DURATION)-1, "%u", &l_dwDuration);
         }
     }
 
@@ -648,7 +649,7 @@ int Test_03(int i_iArgC, char* i_pArgV[])
         }
         else if (0 == STRNICMP(i_pArgV[l_iI], TEST_03_COUNT, LENGTH(TEST_03_COUNT)-1))
         {
-            sscanf(i_pArgV[l_iI] + LENGTH(TEST_01_COUNT) - 1, "%d", &l_dwCount);
+            sscanf(i_pArgV[l_iI] + LENGTH(TEST_01_COUNT) - 1, "%u", &l_dwCount);
             if (1 > l_dwCount)
             {
                 l_dwCount = 1;
@@ -1233,7 +1234,7 @@ int Test_05(int i_iArgC, char* i_pArgV[])
         }
         else if (0 == STRNICMP(i_pArgV[l_iI], TEST_01_COUNT, LENGTH(TEST_01_COUNT)-1))
         {
-            sscanf(i_pArgV[l_iI] + LENGTH(TEST_01_COUNT) - 1, "%d", &l_dwCount);
+            sscanf(i_pArgV[l_iI] + LENGTH(TEST_01_COUNT) - 1, "%u", &l_dwCount);
             if (1 > l_dwCount)
             {
                 l_dwCount = 1;
@@ -1853,6 +1854,131 @@ l_lExit:
 
 
 ////////////////////////////////////////////////////////////////////////////////
+//                                   TEST 9                                   //
+////////////////////////////////////////////////////////////////////////////////
+// Here we calling flush periodically                                         //
+////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////
+//Test_09
+
+int Test_09(int i_iArgC, char* i_pArgV[])
+{
+    IP7_Client    *l_pClient    = NULL;
+    IP7_Telemetry *l_pTelemetry = NULL;
+    IP7_Trace     *l_pTrace     = NULL;
+    tUINT32        l_dwTime     = 0;
+
+    tBOOL          l_bExit      = FALSE;
+    tDOUBLE        l_dbVal      = 0;
+    tUINT16        l_pID        = P7TELEMETRY_INVALID_ID_V2;
+
+    for (int l_iI = 0; l_iI < i_iArgC; l_iI++)
+    {
+        if (0 == STRNICMP(i_pArgV[l_iI], TEST_HELP, LENGTH(TEST_HELP)-1))
+        {
+            printf("This test call flush peridically\n");
+            goto l_lExit;
+        }
+    }
+
+    l_pClient = P7_Create_Client(TM("/P7.PSize=1472 /P7.Pool=32768"));
+
+    if (NULL == l_pClient)
+    {
+        printf("Error: P7 engine was not initialized");
+        goto l_lExit;
+    }
+
+
+    l_pTrace = P7_Create_Trace(l_pClient, TM("Trace flush"));
+    if (NULL == l_pTrace)
+    {
+        printf("Error: P7 Trace was not initialized");
+        goto l_lExit;
+    }
+
+    l_pTelemetry = P7_Create_Telemetry(l_pClient, TM("Telemetry flush"));
+
+    if (l_pTelemetry)
+    {
+        if (FALSE == l_pTelemetry->Create(TM("Test counter"),
+                                            0.0, 
+                                            0.0,
+                                            10000.0,
+                                            9500.0,
+                                            TRUE,
+                                            &l_pID
+                                            )
+            )
+        {
+            printf("Error: Failed to create counter Exit\n");
+            goto l_lExit;
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    l_dwTime = GetTickCount();
+
+    while (FALSE == l_bExit)
+    {
+        l_dbVal += 0.5;
+
+        if (l_pTelemetry)
+        {
+            l_pTelemetry->Add(l_pID, l_dbVal);
+        }
+
+        CThShell::Sleep(10);
+        if (l_dbVal > 10000.0)
+        {
+            l_dbVal = 0.0;
+        }
+
+        l_pTrace->P7_ERROR(NULL, TM("Test trace %f"), l_dbVal);
+
+        if (CTicks::Difference(GetTickCount(), l_dwTime) >= 1000)
+        {
+            P7_Flush();
+            l_dwTime = GetTickCount();
+            
+            if (    (Is_Key_Hit())
+                 && (27 == Get_Char())
+               )
+            {
+                printf("Esc ... exiting\n");
+                l_bExit = TRUE;
+            }
+        }
+    }//while (FALSE == l_bExit)
+
+
+l_lExit:
+    if (l_pTrace)
+    {
+        l_pTrace->Release();
+        l_pTrace = NULL;
+    }
+
+    if (l_pTelemetry)
+    {
+        l_pTelemetry->Release();
+        l_pTelemetry = NULL;
+    }
+
+    if (l_pClient)
+    {
+        l_pClient->Release();
+        l_pClient = NULL;
+    }
+
+    return 0;
+}//Test_09
+
+
+////////////////////////////////////////////////////////////////////////////////
 //                                   MAIN                                     //
 ////////////////////////////////////////////////////////////////////////////////
 int main(int i_iArgC, char* i_pArgV[])
@@ -1903,6 +2029,10 @@ int main(int i_iArgC, char* i_pArgV[])
     else if (8 == l_iTest)
     {
         l_iReturn = Test_08(i_iArgC, i_pArgV);
+    }
+    else if (9 == l_iTest)
+    {
+        l_iReturn = Test_09(i_iArgC, i_pArgV);
     }
     else
     {

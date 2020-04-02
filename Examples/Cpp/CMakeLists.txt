@@ -1,8 +1,20 @@
-include_directories(${P7_Headers})
+cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 
-set(SOURCE
-   Main.cpp
-)
+project(p7_example_cpp)
 
-add_executable(p7-cpp-example ${SOURCE})
-target_link_libraries(p7-cpp-example P7)
+if(WIN32)
+elseif(UNIX)
+else()
+    message(FATAL_ERROR "${PROJECT_NAME}: Platform not supported")
+endif()
+
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} PROJ_SOURCES)
+add_executable(${PROJECT_NAME} ${PROJ_SOURCES})
+target_link_libraries (${PROJECT_NAME} p7)    
+
+set_ide_folder(${PROJECT_NAME})
+
+install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
+ 
+
+

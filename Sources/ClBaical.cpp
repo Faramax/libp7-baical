@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                             /
-// 2012-2019 (c) Baical                                                        /
+// 2012-2020 (c) Baical                                                        /
 //                                                                             /
 // This library is free software; you can redistribute it and/or               /
 // modify it under the terms of the GNU Lesser General Public                  /
@@ -139,7 +139,7 @@ CClBaical::~CClBaical()
 {
     Uninit_Crash_Handler();
 
-    Flush();
+    Close();
 
     CClient::Unshare();
 
@@ -240,8 +240,10 @@ eClient_Status CClBaical::Init_Sockets(tXCHAR **i_pArgs,
 
     if (FALSE == WSA_Init())
     {
+        P7_Set_Last_Error(eP7_Error_Network);
+
         JOURNAL_CRITICAL(m_pLog, 
-                         TM("Windows Socket initialization fail !"));
+                         TM("Socket initialization fail !"));
 
         l_eReturn = ECLIENT_STATUS_INTERNAL_ERROR;
     }
@@ -327,6 +329,11 @@ eClient_Status CClBaical::Init_Sockets(tXCHAR **i_pArgs,
         {
             FREE_ADDR_INFO(l_pInfo);
             l_pInfo = NULL;
+        }
+
+        if (ECLIENT_STATUS_OK != l_eReturn)
+        {
+            P7_Set_Last_Error(eP7_Error_Network);
         }
     }//if (ECLIENT_STATUS_OK == l_eReturn)
 
@@ -458,6 +465,11 @@ eClient_Status CClBaical::Init_Pool(tXCHAR **i_pArgs,
                  m_dwData_Wnd_Max_Count
                 );
 
+    if (NULL == m_pBPool)
+    {
+       P7_Set_Last_Error(eP7_Error_MemoryAllocation);
+    }
+
     return (NULL != m_pBPool) ? ECLIENT_STATUS_OK : ECLIENT_STATUS_INTERNAL_ERROR;
 }//Init_Pool
 
@@ -482,6 +494,7 @@ eClient_Status CClBaical::Init_Members(tXCHAR **i_pArgs,
         m_pData_Queue_Out = new CBList<CTPacket*>();
         if (NULL == m_pData_Queue_Out)
         {
+            P7_Set_Last_Error(eP7_Error_MemoryAllocation);
             l_eReturn = ECLIENT_STATUS_INTERNAL_ERROR;
             JOURNAL_CRITICAL(m_pLog, TM("Data queue [out] initialization failed"));
         }
@@ -493,6 +506,7 @@ eClient_Status CClBaical::Init_Members(tXCHAR **i_pArgs,
         m_pData_Queue_In = new CBList<CTPacket*>();
         if (NULL == m_pData_Queue_In)
         {
+            P7_Set_Last_Error(eP7_Error_MemoryAllocation);
             l_eReturn = ECLIENT_STATUS_INTERNAL_ERROR;
             JOURNAL_CRITICAL(m_pLog, TM("Data queue [in] initialization failed"));
         }
@@ -503,6 +517,7 @@ eClient_Status CClBaical::Init_Members(tXCHAR **i_pArgs,
         m_pData_Wnd = new CBList<CTPacket*>();
         if (NULL == m_pData_Wnd)
         {
+            P7_Set_Last_Error(eP7_Error_MemoryAllocation);
             l_eReturn = ECLIENT_STATUS_INTERNAL_ERROR;
             JOURNAL_CRITICAL(m_pLog, TM("Data lagoon initialization failed"));
         }
@@ -591,6 +606,7 @@ eClient_Status CClBaical::Init_Members(tXCHAR **i_pArgs,
     {
         if (FALSE == m_cConn_Event.Init(1, EMEVENT_SINGLE_MANUAL))
         {
+            P7_Set_Last_Error(eP7_Error_OS);
             l_eReturn = ECLIENT_STATUS_INTERNAL_ERROR;
             JOURNAL_ERROR(m_pLog, TM("Connection event wasn't created !"));
         }
@@ -600,6 +616,7 @@ eClient_Status CClBaical::Init_Members(tXCHAR **i_pArgs,
     {
         if (FALSE == m_cComm_Event.Init(1, EMEVENT_SINGLE_AUTO))
         {
+            P7_Set_Last_Error(eP7_Error_OS);
             l_eReturn = ECLIENT_STATUS_INTERNAL_ERROR;
             JOURNAL_ERROR(m_pLog, TM("Exit event wasn't created !"));
         }
@@ -614,6 +631,7 @@ eClient_Status CClBaical::Init_Members(tXCHAR **i_pArgs,
                                      )
            )
         {
+            P7_Set_Last_Error(eP7_Error_OS);
             l_eReturn      = ECLIENT_STATUS_INTERNAL_ERROR;
             JOURNAL_ERROR(m_pLog, TM("Communication thread wasn't created !"));
         }
@@ -627,6 +645,7 @@ eClient_Status CClBaical::Init_Members(tXCHAR **i_pArgs,
     {
         if (FALSE == m_cChnl_Event.Init(2, EMEVENT_SINGLE_AUTO, EMEVENT_MULTI))
         {
+            P7_Set_Last_Error(eP7_Error_OS);
             l_eReturn = ECLIENT_STATUS_INTERNAL_ERROR;
             JOURNAL_ERROR(m_pLog, TM("Exit event wasn't created !"));
         }
@@ -641,7 +660,8 @@ eClient_Status CClBaical::Init_Members(tXCHAR **i_pArgs,
                                      )
            )
         {
-            l_eReturn      = ECLIENT_STATUS_INTERNAL_ERROR;
+            P7_Set_Last_Error(eP7_Error_OS);
+            l_eReturn = ECLIENT_STATUS_INTERNAL_ERROR;
             JOURNAL_ERROR(m_pLog, TM("Channel thread wasn't created !"));
         }
         else
@@ -649,7 +669,6 @@ eClient_Status CClBaical::Init_Members(tXCHAR **i_pArgs,
             m_bChnl_Thread = TRUE;
         }
     }
-
 
     return l_eReturn;
 }//Init_Members
@@ -1668,7 +1687,7 @@ tBOOL CClBaical::Get_Info(sP7C_Info *o_pInfo)
 
 ////////////////////////////////////////////////////////////////////////////////
 //Flush
-tBOOL CClBaical::Flush()
+tBOOL CClBaical::Close()
 {
     tBOOL l_bStack_Trace = TRUE;
 
@@ -1678,16 +1697,19 @@ tBOOL CClBaical::Flush()
     l_sStatus.bConnected = FALSE;
     l_sStatus.dwResets   = 0;
 
-    LOCK_ENTER(m_hCS_Reg);
-    for (tUINT32 l_dwI = 0; l_dwI < USER_PACKET_CHANNEL_ID_MAX_SIZE; l_dwI++)
+    if (m_bFlushChannels)
     {
-        if (m_pChannels[l_dwI])
+        LOCK_ENTER(m_hCS_Reg);
+        for (tUINT32 l_dwI = 0; l_dwI < USER_PACKET_CHANNEL_ID_MAX_SIZE; l_dwI++)
         {
-            m_pChannels[l_dwI]->On_Flush(l_dwI, &l_bStack_Trace);
-            m_pChannels[l_dwI]->On_Status(l_dwI, &l_sStatus);
+            if (m_pChannels[l_dwI])
+            {
+                m_pChannels[l_dwI]->On_Flush(l_dwI, &l_bStack_Trace);
+                m_pChannels[l_dwI]->On_Status(l_dwI, &l_sStatus);
+            }
         }
+        LOCK_EXIT(m_hCS_Reg);
     }
-    LOCK_EXIT(m_hCS_Reg);
 
 
     m_cComm_Event.Set(THREAD_EXIT_SIGNAL);
@@ -1726,6 +1748,15 @@ tBOOL CClBaical::Flush()
 
     return TRUE;
 }//Flush
+
+
+////////////////////////////////////////////////////////////////////////////////
+//Flush
+void CClBaical::Flush()
+{
+    //nothing to do, component is designed in such a way to deliver new data as 
+    //fast as possible, nothing to flush
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
