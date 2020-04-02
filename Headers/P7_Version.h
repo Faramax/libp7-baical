@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                             /
-// 2012-2019 (c) Baical                                                        /
+// 2012-2020 (c) Baical                                                        /
 //                                                                             /
 // This library is free software; you can redistribute it and/or               /
 // modify it under the terms of the GNU Lesser General Public                  /
@@ -19,8 +19,8 @@
 #ifndef P7_VERSION_H
 #define P7_VERSION_H
 //-----------------------------------------
-#define P7_VERSION 00050002
+#define P7_VERSION 00050005
 #define P7_VERSION_MAJOR 5
-#define P7_VERSION_MINOR 2
+#define P7_VERSION_MINOR 5
 //-----------------------------------------
 #endif //P7_VERSION_H

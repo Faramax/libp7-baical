@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                             /
-// 2012-2019 (c) Baical                                                        /
+// 2012-2020 (c) Baical                                                        /
 //                                                                             /
 // This library is free software; you can redistribute it and/or               /
 // modify it under the terms of the GNU Lesser General Public                  /
@@ -444,6 +444,7 @@ class CP7Trace
                       
     sP7Trace_Info      m_sHeader_Info;
     sP7Trace_Data      m_sHeader_Data;
+    sP7Trace_Utc_Offs  m_sHeader_Utc;
                       
     sP7C_Status        m_sStatus;
                       
@@ -493,6 +494,8 @@ public:
     tBOOL Register_Module(const tXCHAR *i_pName, IP7_Trace::hModule *o_hModule);
 
     void  Set_Verbosity(IP7_Trace::hModule i_hModule, eP7Trace_Level i_eVerbosity);
+    eP7Trace_Level Get_Verbosity(IP7_Trace::hModule i_hModule);
+
 
     tBOOL Trace(tUINT16            i_wTrace_ID,   
                 eP7Trace_Level     i_eLevel, 

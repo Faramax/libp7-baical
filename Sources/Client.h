@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                             /
-// 2012-2019 (c) Baical                                                        /
+// 2012-2020 (c) Baical                                                        /
 //                                                                             /
 // This library is free software; you can redistribute it and/or               /
 // modify it under the terms of the GNU Lesser General Public                  /
@@ -50,6 +50,7 @@ protected:
     IP7_Client::eType       m_eType;
     tXCHAR                **m_pArgs;
     tINT32                  m_iArgsCnt;
+    volatile tBOOL          m_bFlushChannels;
 
 public:
     CClient(IP7_Client::eType i_eType,
@@ -86,7 +87,7 @@ public:
     virtual tBOOL             Unshare();
 
     //reimplemented in childes, will be called in case of process crash
-    virtual tBOOL             Flush() = 0;
+    virtual tBOOL             Close() = 0;
                               
 protected:                    
     eClient_Status            Init_Log(tXCHAR **i_pArgs, tINT32 i_iCount);

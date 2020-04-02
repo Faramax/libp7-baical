@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                             /
-// 2012-2019 (c) Baical                                                        /
+// 2012-2020 (c) Baical                                                        /
 //                                                                             /
 // This library is free software; you can redistribute it and/or               /
 // modify it under the terms of the GNU Lesser General Public                  /
@@ -116,6 +116,7 @@ public:
         {
             PRINTF(TM("P7:Can't allocate memory\n"));
             l_eReturn = ECLIENT_STATUS_INTERNAL_ERROR;
+            P7_Set_Last_Error(eP7_Error_MemoryAllocation);
             goto l_lblExit;
         }
 
@@ -176,6 +177,7 @@ public:
         {
             if (FALSE == CFSYS::Directory_Create(m_pDir.Get()))
             {
+                P7_Set_Last_Error(eP7_Error_FolderCreation);
                 PRINTF(TM("P7:Can't create directory: %s\n"), l_pArgV);
                 l_eReturn = ECLIENT_STATUS_NOT_ALLOWED;
                 goto l_lblExit;
@@ -225,6 +227,7 @@ public:
         l_eReturn = Create_File();
         if (ECLIENT_STATUS_OK != l_eReturn)
         {
+            P7_Set_Last_Error(eP7_Error_FileCreation);
             PRINTF(TM("P7:File creation failed"));
             goto l_lblExit;
         }

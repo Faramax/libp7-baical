@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                             /
-// 2012-2019 (c) Baical                                                        /
+// 2012-2020 (c) Baical                                                        /
 //                                                                             /
 // This library is free software; you can redistribute it and/or               /
 // modify it under the terms of the GNU Lesser General Public                  /
@@ -41,11 +41,17 @@
 
 #define P7TELEMETRY_INVALID_ID_V2                       ((tUINT16)~((tUINT16)0))
 #define P7TELEMETRY_COUNTERS_MAX_COUNT_V2               ((tUINT16)~((tUINT16)0))
+#define P7TELEMETRY_COUNTER_NAME_MIN_LENGTH_V2                               (2)
 
 
 #define P7TRACE_INFO_FLAG_BIG_ENDIAN                                    (0x0001)
 #define P7TRACE_INFO_FLAG_UNSORTED                                      (0x0002)
 #define P7TRACE_INFO_FLAG_EXTENTION                                     (0x0004)
+#define P7TRACE_INFO_FLAG_TIME_ZONE                                     (0x0008)
+
+#define P7TELEMETRY_FLAG_EXTENTION                                      (0x0001)
+#define P7TELEMETRY_FLAG_TIME_ZONE                                      (0x0002)
+
 
 enum eTrace_Arg_Type
 {
@@ -105,6 +111,7 @@ enum eP7Trace_Type
     EP7TRACE_TYPE_THREAD_STOP       , //Client->Server
     EP7TRACE_TYPE_MODULE            , //Client->Server
     EP7TRACE_TYPE_DELETE            , //Server->Client
+    EP7TRACE_TYPE_UTC_OFFS          , //Client->Server
 
     EP7TRACE_TYPE_MAX           = 32 
 };
@@ -126,6 +133,7 @@ enum eP7Tel_Type
     EP7TEL_TYPE_ENABLE              , //Server->Client
     EP7TEL_TYPE_CLOSE               , //Client->Server
     EP7TEL_TYPE_DELETE              , //Server->Client
+    EP7TEL_TYPE_UTC_OFFS            , //Client->Server
 
     EP7TEL_TYPE_MAX             = 32 
 };
@@ -335,6 +343,17 @@ struct sP7Trace_Module
 } ATTR_PACK(2);
 
 
+//Time zone description
+struct sP7Trace_Utc_Offs
+{
+    union
+    {
+        sP7Ext_Header sCommon;
+        sP7Ext_Raw    sCommonRaw;
+    };
+    tINT32       iUtcOffsetSec; 
+} ATTR_PACK(2);
+
 ////////////////////////////////////////////////////////////////////////////////
 //                             Telemetry                                      //
 ////////////////////////////////////////////////////////////////////////////////
@@ -395,7 +414,7 @@ struct sP7Tel_Counter_v2
     tDOUBLE  dbAlarmMin;
     tDOUBLE  dbMax;
     tDOUBLE  dbAlarmMax;
-    tWCHAR   pName[2];
+    tWCHAR   pName[P7TELEMETRY_COUNTER_NAME_MIN_LENGTH_V2];
 } ATTR_PACK(2);
 
 //telemetry counter On/Off verbosity header
@@ -450,6 +469,18 @@ struct sP7Tel_Value_v2
     tUINT16       wSeqN; 
     tUINT64       qwTimer;      //High resolution timer value
     tDOUBLE       dbValue;
+} ATTR_PACK(2);
+
+
+//Time zone description
+struct sP7Tel_Utc_Offs_V2
+{
+    union
+    {
+        sP7Ext_Header sCommon;
+        sP7Ext_Raw    sCommonRaw;
+    };
+    tINT32       iUtcOffsetSec; 
 } ATTR_PACK(2);
 
 

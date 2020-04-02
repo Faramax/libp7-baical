@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                             /
-// 2012-2019 (c) Baical                                                        /
+// 2012-2020 (c) Baical                                                        /
 //                                                                             /
 // This library is free software; you can redistribute it and/or               /
 // modify it under the terms of the GNU Lesser General Public                  /
@@ -267,7 +267,7 @@ public:
         if (m_bIsThread)
         {
             m_cEvent.Set(DNS_RESOLVER_EXIT_EVENT);
-            if (TRUE == CThShell::Close(m_hThread, 15000))
+            if (TRUE == CThShell::Close(m_hThread, 90000))
             {
                 m_hThread   = 0;//NULL;
                 m_bIsThread = FALSE;

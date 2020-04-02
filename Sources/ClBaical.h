@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                             /
-// 2012-2019 (c) Baical                                                        /
+// 2012-2020 (c) Baical                                                        /
 //                                                                             /
 // This library is free software; you can redistribute it and/or               /
 // modify it under the terms of the GNU Lesser General Public                  /
@@ -150,7 +150,9 @@ public:
                          );
                      
     tBOOL            Get_Info(sP7C_Info *o_pInfo);
-    tBOOL            Flush();
+    tBOOL            Close();
+
+    virtual void     Flush();
 
 private:
     static THSHELL_RET_TYPE THSHELL_CALL_TYPE Static_Comm_Routine(void *i_pContext)

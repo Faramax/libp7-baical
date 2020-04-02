@@ -106,6 +106,7 @@ int main(int i_iArgC, char* i_pArgV[])
     //unregister current application thread (it is obligatory if thread was registered)
     P7_Trace_Unregister_Thread(g_hTrace, 0);
 
+    P7_Client_Flush(g_hClient);
 
 l_lblExit:
     if (g_hTel)
