@@ -17,6 +17,7 @@ p7_logger::p7_logger(char const* opts)
       if (m_telemetry == nullptr)
          throw p7_error("failed to create P7 telemetry");
    }
+   P7_Set_Crash_Handler();
 }
 
 void p7_logger::register_module(std::vector<const char*> const& module_names)
@@ -34,6 +35,7 @@ void p7_logger::register_module(std::vector<const char*> const& module_names)
 
 p7_logger::~p7_logger()
 {
+   P7_Clr_Crash_Handler();
    if(m_trace)
       m_trace->Release();
    m_trace = nullptr;
@@ -43,6 +45,7 @@ p7_logger::~p7_logger()
    if(m_client)
       m_client->Release();
    m_client = nullptr;
+   std::cout << "P7 has been deinited." << std::endl;
 }
 
 void p7_logger::register_thread(char const* name)
@@ -69,7 +72,7 @@ p7_beam p7_logger::create_beam(const tXCHAR  *i_pName,
                                tDOUBLE i_dbMin, tDOUBLE i_dbAlarmMin,
                                tDOUBLE i_dbMax, tDOUBLE i_dbAlarmMax)
 {
-   auto instance = p7_logger_raii::instance();
+   auto instance = p7_logger_singleton::instance();
    if(!instance)
       return false;
    IP7_Telemetry* telemetry = instance->telemetry();
@@ -100,41 +103,13 @@ void p7_logger::set_verbosity(eP7Trace_Level const& level)
    }
 }
 
-p7_logger_raii::p7_logger_raii(char const* opts)
-{
-   deinit();
-   init(opts);
-}
-
-p7_logger_raii::~p7_logger_raii()
-{
-   deinit();
-}
-
-void p7_logger_raii::init(char const* opts)
-{
-   m_instance = new p7_logger(opts);
-   P7_Set_Crash_Handler();
-}
-
-void p7_logger_raii::deinit()
-{
-   if(m_instance)
-   {
-      P7_Clr_Crash_Handler();
-      delete m_instance;
-      m_instance = nullptr;
-      std::cout << "P7 has been deinited." << std::endl;
-   }
-}
-
 p7_beam::p7_beam(tUINT16 tid)
    : m_tid(tid)
 {}
 
 bool p7_beam::add(tDOUBLE i_llValue)
 {
-   auto instance = p7_logger_raii::instance();
+   auto instance = p7_logger_singleton::instance();
    if(!instance)
       return false;
    IP7_Telemetry* telemetry = instance->telemetry();
@@ -143,4 +118,4 @@ bool p7_beam::add(tDOUBLE i_llValue)
    return telemetry->Add(m_tid, i_llValue);
 }
 
-p7_logger* p7_logger_raii::m_instance = nullptr;
+std::unique_ptr<p7_logger> p7_logger_singleton::m_instance = std::make_unique<p7_logger>("");

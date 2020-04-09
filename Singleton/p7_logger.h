@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <vector>
 #include <utility>
 #include <cassert>
@@ -71,13 +72,16 @@ private:
    stTelemetry_Conf  m_telemetry_conf     = {};
 };
 
-/*! Класс инициализирует синглетон логгера p7_logger при создании и деинициализирует при удалении. */
-struct DLL_PUBLIC p7_logger_raii
+/*! Класс инициализирует синглетон логгера p7_logger. Деинициализироваться он будет автоматически при завершении программы.*/
+struct DLL_PUBLIC p7_logger_singleton
 {
-   p7_logger_raii(char const* opts);
-   ~p7_logger_raii();
+   inline static void init(char const* opts)
+   {
+      m_instance = {};
+      m_instance = std::make_unique<p7_logger>(opts);
+   }
 
-   inline static p7_logger*           instance(){return m_instance;}
+   inline static p7_logger*           instance(){return m_instance.get();}
 
    inline static void                 set_verbosity(size_t module_idx, eP7Trace_Level const& level)
    {
@@ -89,21 +93,17 @@ struct DLL_PUBLIC p7_logger_raii
    }
 
 private:
-   static void deinit();
-   static void init(char const* opts);
-
-private:
-   static p7_logger* m_instance;
+   static std::unique_ptr<p7_logger> m_instance;
 };
 
 #ifdef USE_P7_LOG
    #define P7_LOG(log_level, module_enum, format, ...)                              \
-      p7_logger_raii::instance() ?                                                  \
-         p7_logger_raii::instance()->trace()->P7_DELIVER                            \
+      p7_logger_singleton::instance() ?                                                  \
+         p7_logger_singleton::instance()->trace()->P7_DELIVER                            \
             (                                                                       \
                0,                                                                   \
                log_level,                                                           \
-               p7_logger_raii::instance()->module(static_cast<size_t>(module_enum)),\
+               p7_logger_singleton::instance()->module(static_cast<size_t>(module_enum)),\
                format,                                                              \
                ##__VA_ARGS__                                                        \
             ) : false
