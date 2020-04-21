@@ -1,6 +1,3 @@
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED 1)
-
 set(TARGET p7_logger_lib)
 set(SOURCE
    p7_logger.h
