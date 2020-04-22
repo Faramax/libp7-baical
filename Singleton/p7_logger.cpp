@@ -118,4 +118,4 @@ bool p7_beam::add(tDOUBLE i_llValue)
    return telemetry->Add(m_tid, i_llValue);
 }
 
-std::unique_ptr<p7_logger> p7_logger_singleton::m_instance = std::make_unique<p7_logger>("");
+std::unique_ptr<p7_logger> p7_logger_singleton::m_instance;
