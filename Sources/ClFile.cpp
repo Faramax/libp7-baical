@@ -560,7 +560,7 @@ eClient_Status CClFile::Create_File()
     {
         PSPrint(l_pFile_Name, 
                 LENGTH(l_pFile_Name), 
-                TM("/%04d%02d%02d-%02d%02d%02d.%03d.") P7_EXT,
+                TM("/%04d-%02d%-02d--%02d-%02d-%02d-%06d.") P7_EXT,
                 l_dwYear, 
                 l_dwMonth,
                 l_dwDay,
