@@ -35,6 +35,7 @@ void p7_logger::register_module(std::vector<const char*> const& module_names)
 
 p7_logger::~p7_logger()
 {
+   P7_Flush();
    P7_Clr_Crash_Handler();
    if(m_trace)
       m_trace->Release();
