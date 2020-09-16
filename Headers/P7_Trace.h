@@ -75,7 +75,7 @@ enum eP7Trace_Level
 #define P7_DELIVER(i_wID, i_eLevel, i_hModule, ...) Trace(i_wID,\
                                                                      i_eLevel,\
                                                                      i_hModule,\
-                                                                     (tUINT16)__LINE__,\
+                                                                     static_cast<tUINT16>(__LINE__),\
                                                                      __FILE__,\
                                                                      __FUNCTION__,\
                                                                      __VA_ARGS__)
