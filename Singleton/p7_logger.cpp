@@ -11,12 +11,12 @@ p7_logger::p7_logger(char const* opts)
       throw p7_error("failed to create P7 trace");
 
    /// Telemetry available for binary sinks only!
-   if (m_client->Get_Type() == IP7_Client::eFileBin || m_client->Get_Type() == IP7_Client::eAuto)
-   {
-      m_telemetry = P7_Create_Telemetry(m_client, "MainTelemetry", &m_telemetry_conf);
-      if (m_telemetry == nullptr)
-         throw p7_error("failed to create P7 telemetry");
-   }
+//   if (m_client->Get_Type() == IP7_Client::eFileBin || m_client->Get_Type() == IP7_Client::eAuto)
+//   {
+//      m_telemetry = P7_Create_Telemetry(m_client, "MainTelemetry", &m_telemetry_conf);
+//      if (m_telemetry == nullptr)
+//         throw p7_error("failed to create P7 telemetry");
+//   }
    P7_Set_Crash_Handler();
 }
 
