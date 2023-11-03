@@ -104,6 +104,14 @@ void p7_logger::set_verbosity(eP7Trace_Level const& level)
    }
 }
 
+eP7Trace_Level       p7_logger::get_verbosity(size_t module_idx)
+{
+   assert(P7_TRACE_LEVEL_TRACE == EP7TRACE_LEVEL_TRACE);
+   assert(P7_TRACE_LEVEL_CRITICAL == EP7TRACE_LEVEL_CRITICAL);
+
+   return (eP7Trace_Level) P7_Trace_Get_Verbosity(m_trace, module(module_idx));
+}
+
 p7_beam::p7_beam(tUINT16 tid)
    : m_tid(tid)
 {}

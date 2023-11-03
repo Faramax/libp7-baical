@@ -64,6 +64,8 @@ public:
    void                 set_verbosity(size_t module_idx, eP7Trace_Level const& level);
    void                 set_verbosity(eP7Trace_Level const& level);
 
+   eP7Trace_Level       get_verbosity(size_t module_idx);
+
 private:
    IP7_Client*       m_client = nullptr;
    IP7_Trace *       m_trace = nullptr;
