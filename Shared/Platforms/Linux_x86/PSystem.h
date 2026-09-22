@@ -81,7 +81,7 @@ public:
                              )
     {
         time_t l_sTime = time(NULL);
-        struct tm l_sTM = *localtime(&l_sTime);
+        struct tm l_sTM = *gmtime(&l_sTime);
 
         o_rYear   = (uint32_t)(l_sTM.tm_year + 1900);
         o_rMonth  = (uint32_t)(l_sTM.tm_mon + 1);
