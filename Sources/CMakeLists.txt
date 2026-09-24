@@ -40,10 +40,12 @@ endif()
 install(TARGETS ${PROJECT_NAME}
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
-        RUNTIME DESTINATION bin)
+        RUNTIME DESTINATION bin
+        EXCLUDE_FROM_ALL)
 
 install(TARGETS ${PROJECT_NAME}-shared
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
-        RUNTIME DESTINATION bin)
+        RUNTIME DESTINATION bin
+        EXCLUDE_FROM_ALL)
         
