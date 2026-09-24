@@ -38,14 +38,14 @@ elseif(UNIX)
 endif()
 
 install(TARGETS ${PROJECT_NAME}
+        EXCLUDE_FROM_ALL
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
-        RUNTIME DESTINATION bin
-        EXCLUDE_FROM_ALL)
+        RUNTIME DESTINATION bin)
 
 install(TARGETS ${PROJECT_NAME}-shared
+        EXCLUDE_FROM_ALL
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
-        RUNTIME DESTINATION bin
-        EXCLUDE_FROM_ALL)
+        RUNTIME DESTINATION bin)
         
